@@ -1,0 +1,12 @@
+verilator --binary -j 0 -Wall --top-module topModule topModule.sv
+
+verilator --trace --cc -exe -Wall testbench.cpp topModule.sv 
+
+#in this in between step, you need to build and link verilated_vcd_c
+
+verilated_vcd_c.o: ${VERILATOR_ROOT}/include/verilated_vcd_c.cpp
+	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
+
+VK_GLOBAL_OBJS += verilated_vcd_c.o
+
+make -j -C obj_dir -f VtopModule.mk VtopModule
