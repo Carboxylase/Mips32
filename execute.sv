@@ -1,21 +1,29 @@
-module decoder
+module execute
 (input wire clk,
 input wire [5:0] opcode,
 input wire [5:0] instr_sel,
 input wire [4:0] rs,
 input wire [4:0] rt,
 input wire [4:0] rd,
+input wire [31:0] rs_data,
+input wire [31:0] rt_data,
+input wire [31:0] rd_data,
 input wire [4:0] sa,
 input wire [19:0] code,
-input wire [4:0] base,
-input wire [25:0] offset,
-input reg [25:0] instr_index,
-input reg [18:0] immediate,
-input reg [2:0] mc0_sel,
-input reg [1:0] bp,
-input reg [4:0] msdb,
-input reg [4:0] lsb,
-input reg [1:0] i_type);
+input wire [31:0] base_data,
+input wire [31:0] offset,
+input wire [25:0] instr_index,
+input wire [31:0] immediate,
+input wire [2:0] mc0_sel,
+input wire [1:0] bp,
+input wire [4:0] msdb,
+input wire [4:0] lsb,
+input wire [1:0] i_type,
+output reg [1:0] memAccessEnable,
+output reg [31:0] memAddr,
+output reg [1:0] accessLength,
+output reg [31:0] executeOutput,
+output reg [4:0] writebackReg);
 
 // register descriptions
 // opcode is the bits [31:26] of the fethed instruction
@@ -26,307 +34,261 @@ input reg [1:0] i_type);
 
 // For branches that take two cycles, we will compute the the 
 
+// regWrite is for the writeback stage
+// memWrite is likely going to be rs_data, rt_data, or rd_data
+
+reg [31:0] temp32BitVal; // a temporary value for computations
+reg [32:0] temp33BitVal;
+
 initial
 begin
 
 end
 
-always @(posedge clk)
+always @(*)
 begin
-
-    opcode <= fetched_instruction[31:26];
-
-    // honestly looks like rs, rt, and rd will always be [25:21], [20:16], and [15:11] respectively
-    // so we can just always set those registers to be thosw fields
-
-    rs <= fetched_instruction[25:21];
-    rt <= fetched_instruction[20:16];
-    rd <= fetched_instruction[15:11];
-
-    case(fetched_instruction[31:26])
+    case(opcode)
         6'b000000: 
         begin
-            case(fetched_instruction[5:0])
-                6'b100000: // ADD
+            case(instr_sel)
+                6'b000000: // ADD
                 begin
-                    instr_sel <= 6'b000000;
-                end
-
-                6'b100001: // ADDU
-                begin
-                    instr_sel <= 6'b000001;
-                end
-
-                6'b100100: // AND
-                begin
-                    instr_sel <= 6'b000010;
-                end
-                6'b001101: // BREAK
-                begin
-                    instr_sel <= 6'b000011;
-                    code <= fetched_instruction[25:6];
-                end
-
-                6'b010001: // CLO
-                begin
-                    instr_sel <= 6'b000100;
-                end
-
-                6'b010000: // CLZ
-                begin
-                    instr_sel <= 6'b000101;
-                end
-
-                6'b011010: // DIV, MOD
-                begin
-                    case(fetched_instruction[10:6])
-                        5'b0010: // DIV
-                        begin
-                            instr_sel <= 6'b000110;
-                        end
-                        default: // MOD
-                        begin
-                            instr_sel <= 6'b000111;
-                        end
-                    endcase
-                end
-
-                6'b011011: // DIVU, MODU
-                begin
-                    case(fetched_instruction[10:6])
-                        5'b0010: // DIVU
-                        begin
-                            instr_sel <= 6'b001000;
-                        end
-                        default: // MODU
-                        begin
-                            instr_sel <= 6'b001001;
-                        end
-                    endcase
-                end
-
-                6'b000000: // EHB, NOP, PAUSE, SLL, SSNOP
-                begin
-                    if (fetched_instruction[10:6] == 5'b00011)
+                    $display("Execute - ADD");
+                    temp32BitVal = rs_data + rt_data;
+                    temp33BitVal = rs_data + rt_data;
+                    if (temp32BitVal != temp33BitVal[31:0])
                     begin
-                        instr_sel <= 6'b001010;
-                        $display("PAUSE - not implemented yet");
+                        // signal exception
                     end
-                    else // EHB, NOP, SSNOP are implemented as SLL in hardware
+                    else
                     begin
-                        instr_sel <= 6'b001011;
-                        sa <= fetched_instruction[10:6];
-                    end
-
-                end
-
-                6'b001001: // JALR, JALR.HB, JR, JR.HB
-                begin
-                    if (fetched_instruction[15:11] != 5'b00000) // JALR and JALR.HB
-                    begin
-                        if (fetched_instruction[10] == 1'b1) // JALR.HB
-                        begin
-                            instr_sel <= 6'b001100;
-                            $display("JALR.HB"); 
-                        end
-                        else // JALR
-                        begin
-                            instr_sel <= 6'b001101;
-                            $display("JALR");
-                        end
-                    end
-                    else // JR and JR.HB
-                    begin
-                        if (fetched_instruction[10] == 1'b1) // JR.HB
-                        begin
-                            instr_sel <= 6'b001110;
-                            $display("JR.HB");
-                        end
-                        else // JR
-                        begin
-                            instr_sel <= 6'b001111;
-                            $display("JR");
-                        end
+                        executeOutput = rs_data + rt_data;
                     end
                 end
 
-                6'b000101: // LSA
+                6'b000001: // ADDU
                 begin
-                    instr_sel <= 6'b010000;
-                    sa <= {3'b0, fetched_instruction[7:6]};
+                    $display("Execute - ADDU");
+                    temp32BitVal = rs_data + rt_data;
                 end
 
-                6'b011000: // MUH, MUL
+                6'b000010: // AND
                 begin
-                    case(fetched_instruction[10:6])
-                        5'b00010: // MUL
-                        begin
-                            instr_sel <= 6'b010001;
-                        end
-                        default: // MUH
-                        begin
-                            instr_sel <= 6'b010010;
-                        end
-                    endcase
+                    $display("Execute - AND");
+                end
+                6'b000011: // BREAK
+                begin
+                    $display("Execute - BREAK");
                 end
 
-                6'b011001: // MUHU, MULU
+                6'b000100: // CLO
                 begin
-                    case(fetched_instruction[10:6])
-                        5'b00010: // MULU
-                        begin
-                            instr_sel <= 6'b010011;
-                        end
-                        default: // MUHU
-                        begin
-                            instr_sel <= 6'b010100;
-                        end
-                    endcase
+                    $display("Execute - CLO");
                 end
 
-                6'b100111: // NOR
+                6'b000101: // CLZ
                 begin
-                    instr_sel <= 6'b010101;
+                    $display("Execute - CLZ");
                 end
 
-                6'b000010: // ROTR, SRL
+                6'b000110: // DIV
                 begin
-                    sa <= fetched_instruction[10:6];
-
-                    case(fetched_instruction[21])
-                        1'b1: // ROTR
-                        begin
-                            instr_sel <= 6'b010110;
-                        end
-                        default: // SRL
-                        begin
-                            instr_sel <= 6'b010111;
-                        end
-                    endcase
+                    $display("Execute - DIV");
+                end
+                            
+                6'b000111: // MOD
+                begin
+                    $display("Execute - MOD");
                 end
 
-                6'b000110: // ROTRV, SRLV
+                6'b001000: // DIVU
                 begin
-                    case(fetched_instruction[6])
-                        1'b1: // ROTRV
-                        begin
-                            instr_sel <= 6'b011000;
-                        end
-                        default: // SRLV
-                        begin
-                            instr_sel <= 6'b011001;
-                        end
-                    endcase
+                    $display("Execute - DIVU");
                 end
 
-                6'b001110: // SDBBP
+                6'b001001: // MODU
                 begin
-                    instr_sel <= 6'b011010;
-                    code <= fetched_instruction[25:6];
+                    $display("Execute - MODU");
                 end
 
-                6'b110101: // SELEQZ
+                6'b001010: //PAUSE
                 begin
-                    instr_sel <= 6'b011011;
+                    $display("Execute - PAUSE - NOT IMPLEMENTED");
                 end
 
-                6'b110111: // SELNEZ
+                6'b001011: // EHB, NOP, SSNOP are implemented as SLL in hardware
                 begin
-                    instr_sel <= 6'b011100;
+                    $display("Execute - SLL");
                 end
 
-                6'b000100: // SLLV
+                6'b001100: // JALR, JALR.HB, JR, JR.HB
                 begin
-                    instr_sel <= 6'b011101;
+                    $display("Execute - JALR.HB");
                 end
 
-                6'b101010: // SLT
+                6'b001101: // JALR
                 begin
-                    instr_sel <= 6'b011110;
+                    $display("Execute - JALR");
+                end
+                
+                6'b001110:
+                begin
+                    $display("Execute - JR.HB");
                 end
 
-                6'b101011: // SLTU
+                6'b001111: // JR
                 begin
-                    instr_sel <= 6'b011111;
+                    $display("Execute - JR");
                 end
 
-                6'b000011: // SRA
+                6'b010000: // LSA
                 begin
-                    instr_sel <= 6'b100000;
-                    sa <= fetched_instruction[10:6];
+                    $display("Execute - LSA");
                 end
 
-                6'b000111: // SRAV
+                6'b010001: // MUL
                 begin
-                    instr_sel <= 6'b100001;
+                    $display("Execute - MUL");
+                end
+
+                6'b010010: // MUH
+                begin
+                    $display("Execute - MUH");
+                end
+
+                6'b010011: // MULU
+                begin
+                    $display("Execute - MULU");
+                end
+
+                6'b010100: // MUHU
+                begin
+                    $display("Execute - MUHU");
+                end
+
+                6'b010101: // NOR
+                begin
+                    $display("Execute - NOR");
+                end
+
+                6'b010110: // ROTR, SRL
+                begin
+                    $display("Execute - ROTR");
+                end
+
+                6'b010111: // SRL
+                begin
+                    $display("Execute - SRL");
+                end
+
+                6'b011000: // ROTRV
+                begin
+                    $display("Execute - ROTRV");
+                end
+
+                6'b011001: // SRLV
+                begin
+                    $display("Execute - SRLV");
+                end
+
+                6'b011010: // SDBBP
+                begin
+                    $display("Execute - SDBBP");
+                end
+
+                6'b011011: // SELEQZ
+                begin
+                    $display("Execute - SELEQZ");
+                end
+
+                6'b011100: // SELNEZ
+                begin
+                    $display("Execute - SELNEZ");
+                end
+
+                6'b011101: // SLLV
+                begin
+                    $display("Execute - SLLV");
+                end
+
+                6'b011110: // SLT
+                begin
+                    $display("Execute - SLT");
+                end
+
+                6'b011111: // SLTU
+                begin
+                    $display("Execute - SLTU");
+                end
+
+                6'b100000: // SRA
+                begin
+                    $display("Execute - SRA");
+                end
+
+                6'b100001: // SRAV
+                begin
+                    $display("Execute - SRAV");
                 end
 
                 6'b100010: // SUB
                 begin
-                    instr_sel <= 6'b100010;
+                    $display("Execute - SUB");
                 end
 
                 6'b100011: // SUBU
                 begin
-                    instr_sel <= 6'b100011;
+                    $display("Execute - SUBU");
                 end
 
-                6'b001111: // SYNC
+                6'b100100: // SYNC
                 begin
-                    instr_sel <= 6'b100100;
-                    $display("SYNC - Not Implemented");
+                    $display("Execute - SYNC - NOT IMPLEMENTED");
                 end
 
-                6'b001100: // SYSCALL
+                6'b100101: // SYSCALL
                 begin
-                    instr_sel <= 6'b100101;
-                    code <= fetched_instruction[25:6];
+                    $display("Execute - SYSCALL");
                 end
 
-                6'b110100: // TEQ
+                6'b100110: // TEQ
                 begin
-                    instr_sel <= 6'b100110;
-                    code <= {10'b0, fetched_instruction[15:6]};
+                    $display("Execute - TEQ");
                 end
 
-                6'b110000: // TGE
+                6'b100111: // TGE
                 begin
-                    instr_sel <= 6'b100111;
-                    code <= {10'b0, fetched_instruction[15:6]};
+                    $display("Execute - TGE");
                 end
 
-                6'b110001: // TGEU
+                6'b101000: // TGEU
                 begin
-                    instr_sel <= 6'b101000;
-                    code <= {10'b0, fetched_instruction[15:6]};
+                    $display("Execute - TGEU");
                 end
 
-                6'b110010: // TLT
+                6'b101001: // TLT
                 begin
-                    instr_sel <= 6'b101001;
-                    code <= {10'b0, fetched_instruction[15:6]};
+                    $display("Execute - TLT");
                 end 
 
-                6'b110011: // TLTU
+                6'b101010: // TLTU
                 begin
-                    instr_sel <= 6'b101010;
-                    code <= {10'b0, fetched_instruction[15:6]};
+                    $display("Execute - TLTU");
                 end
 
-                6'b110110: // TNE
+                6'b101011: // TNE
                 begin
-                    instr_sel <= 6'b101011;
-                    code <= {10'b0, fetched_instruction[15:6]};
+                    $display("Execute - TNE");
                 end
 
-                6'b100110: // XOR
+                6'b101100: // XOR
                 begin
-                    instr_sel <= 6'b101100;
+                    $display("Execute - XOR");
                 end
 
                 default: // OR
                 begin
-                   instr_sel <= 6'b101101; 
+                   $display("Execute - OR");
                 end
 
             endcase
@@ -334,747 +296,619 @@ begin
 
         6'b000001:
         begin
-            case (fetched_instruction[20:16])
-                5'b10111: // SIGRIE
+            case (instr_sel)
+                6'b000000: // SIGRIE
                 begin
-                    instr_sel <= 6'b000000;
-                    code <= {4'b0, fetched_instruction[15:0]};
+                    $display("Execute - SIGRIE");
                 end
-                5'b10001: // BAL
+                6'b000001: // BAL
                 begin
-                    instr_sel <= 6'b000001;
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - BAL");
                 end
-                5'b00001: // BGEZ
+                6'b000010: // BGEZ
                 begin
-                    instr_sel <= 6'b000010;
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - BGEZ");
                 end
-                5'b00000: // BLTZ
+                6'b000011: // BLTZ
                 begin
-                    instr_sel <= 6'b000011;
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - BLTZ");
                 end
-                5'b10000: // NAL
+                6'b000100: // NAL
                 begin
-                    instr_sel <= 6'b000100;
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - NAL");
                 end
                 default: // SYNCI
                 begin
-                    instr_sel <= 6'b000101;
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - SYNCI");
                 end
             endcase
         end
 
         6'b000010: // J
         begin
-            instr_index <= fetched_instruction[25:0];
+            $display("Execute - J");
         end
 
         6'b000011: // JAL
         begin
-            instr_index <= fetched_instruction[25:0];
+            $display("Execute - JAL");
         end
 
         6'b000100: // B, BEQ
         begin
             // B is implemented as BEQ
-            offset <= {10'b0, fetched_instruction[15:0]};
+            $display("Execute - BEQ");
         end
 
         6'b000101: // BNE
         begin
-            offset <= {10'b0, fetched_instruction[15:0]};
+            $display("Execute - BNE");
         end
 
         6'b000110: // BGEUC, BGEZALC, BLEUC, BLEZ, BLEZALC
         begin
-            offset <= {10'b0, fetched_instruction[15:0]};
+            case (instr_sel)
+                6'b000000:
+                begin
+                    $display("Execute - BGEZALC");
+                end
 
-            if (fetched_instruction[25:21] != 5'b0 && fetched_instruction[20:16] != 5'b0) // BGEUC/BLEUC (idiom), BGEZALC
-            begin
-                if (fetched_instruction[25:21] == fetched_instruction[20:16]) // BGEZALC
+                6'b000001: // BGEUC/BLEUC
                 begin
-                    instr_sel <= 6'b000000;
+                    $display("Execute - BGEUC/BLEUC");
                 end
-                else // BGEUC/BLEUC
+
+                6'b000010:
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - BLEZALC");
                 end
-            end    
-            else if (fetched_instruction[25:21] == 5'b0) // BLEZALC
-            begin
-                instr_sel <= 6'b000010;
-            end
-            else // BLEZ
-            begin
-                instr_sel <= 6'b000011;
-            end
+
+                default: // BLEZ
+                begin
+                    $display("Execute - BLEZ");
+                end
+            endcase
         end
 
         6'b000111: // BGTUC, BGTZ, BGTZALC, BLTUC, BLTZALC
         begin
-            offset <= {10'b0, fetched_instruction[15:0]};
-
-            if (fetched_instruction[25:21] != 5'b0 && fetched_instruction[20:16] != 5'b0) // BLTUC/BGTUC(idiom), BLTZALC
-            begin
-                if (fetched_instruction[25:21] == fetched_instruction[20:16]) // BLTZALC
+            case (instr_sel)
+                6'b000000:
                 begin
-                    instr_sel <= 6'b000000;
+                    $display("Execute - BLTZALC");
                 end
-                else // BLTUC/BGTUC
+                6'b000001: // BLTUC/BGTUC
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - BLTUC/BGTUC");
                 end
-            end
-            else if (fetched_instruction[25:21] == 5'b0) // BGTZALC
-            begin
-                instr_sel <= 6'b000010;
-            end
-            else // BGTZ
-            begin
-                instr_sel <= 6'b000011;
-            end
+                6'b000010:
+                begin
+                    $display("Execute - BGTZALC");
+                end
+                default: // BGTZ
+                begin
+                    $display("Execute - BGTZ");
+                end
+            endcase
         end
 
         6'b001000: // BEQC, BEQZALC, BOVC BRO WTF
         begin
-            offset <= {10'b0, fetched_instruction[15:0]};
-
-            if (fetched_instruction[25:21] >= fetched_instruction[20:16]) // BOVC
-            begin
-                instr_sel <= 6'b000000;
-            end
-            else
-            begin
-                if (fetched_instruction[25:21] == 5'b0) // BEQZALC
+            case (instr_sel)
+                6'b000000: // BOVC
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - BOVC");
                 end
-                else // BEQC
+                6'b000001: // BEQZALC
                 begin
-                    instr_sel <= 6'b000010;
+                    $display("Execute - BEQZALC");
                 end
-            end
+                default: // BEQC
+                begin
+                    $display("Execute - BEQC");
+                end
+            endcase
         end
 
         6'b001001: // ADDIU
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
+            $display("Execute - ADDIU");
 
         end
 
         6'b001010: // SLTI
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
-
+            $display("Execute - SLTI");
         end
 
         6'b001011: // SLTIU
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
-
+            $display("Execute - SLTIU");
         end
 
         6'b001100: // ANDI
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
-
+            $display("Execute - ANDI");
         end
 
         6'b001101: // ORI
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
-
+            $display("Execute - ORI");
         end
 
         6'b001110: // XORI
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
-
+            $display("Execute - XORI");
         end
 
         6'b001111: // AUI, LUI - LUI is an assembly idiom of AUI where rs = 0
         begin
-            immediate <= {3'b0, fetched_instruction[15:0]};
-            
+            $display("Execute - AUI");
         end
 
         6'b010000:
         begin
-            mc0_sel <= fetched_instruction[2:0];
 
-            case (fetched_instruction[25])
-                1'b0:
+            case (instr_sel)
+
+                6'b000000: // DI
                 begin
-                    case (fetched_instruction[25:21])
-                        5'b01011:
-                        begin
-                            case (fetched_instruction[5:0])
-                                6'b000000: // DI
-                                begin
-                                    instr_sel <= 6'b000000;
-                                end
-
-                                6'b100100: // DIVP
-                                begin
-                                    instr_sel <= 6'b000001;
-                                end
-
-                                6'b100000: // EI
-                                begin
-                                    instr_sel <= 6'b000010;
-                                end
-
-                                default: // EVP
-                                begin
-                                    instr_sel <= 6'b000011;
-                                end
-                            endcase
-                            
-                        end
-
-                        5'b00000: // MFC0
-                        begin
-                            instr_sel <= 6'b000100;
-                        end
-
-                        5'b00010: // MFHC0
-                        begin
-                            instr_sel <= 6'b000101;
-                        end
-
-                        5'b00100: // MTC0
-                        begin
-                            instr_sel <= 6'b000110;
-                        end
-
-                        5'b00110: // MTHC0
-                        begin
-                            instr_sel <= 6'b000111;
-                        end
-
-                        5'b01010: // RDPGPR
-                        begin
-                            instr_sel <= 6'b001000;
-                        end
-
-                        default: // WRPGPR
-                        begin
-                            instr_sel <= 6'b001001;
-                        end
-                    endcase
+                    $display("Execute - DI");
                 end
-                default:
+
+                6'b000001: // DIVP
                 begin
-                    case (fetched_instruction[5:0])
-                        6'b011111: // DERET
-                        begin
-                            instr_sel <= 6'b001010;
-                        end
+                    $display("Execute - DIVP");
+                end
 
-                        6'b011000:
-                        begin
-                            case (fetched_instruction[6])
-                                1'b0: // ERET
-                                begin
-                                    instr_sel <= 6'b001011;
-                                end
-                                default: // ERETNC
-                                begin
-                                    instr_sel <= 6'b001100;
-                                end
-                            endcase
-                        end
+                6'b000010: // EI
+                begin
+                    $display("Execute - EI");
+                end
 
-                        6'b000011: // TLBINV
-                        begin
-                            instr_sel <= 6'b001101;
-                        end
+                6'b000011: // EVP
+                begin
+                    $display("Execute - EVP");
+                end
 
-                        6'b000100: // TLBINVF
-                        begin
-                            instr_sel <= 6'b001110;
-                        end
+                6'b000100: // MFC0
+                begin
+                    $display("Execute - MFC0");
+                end
 
-                        6'b001000: // TLBP
-                        begin
-                            instr_sel <= 6'b001111;
-                        end
+                6'b000101: // MFHC0
+                begin
+                    $display("Execute - MFHC0");
+                end
 
-                        6'b000001: // TLBR
-                        begin
-                            instr_sel <= 6'b010000;
-                        end
+                6'b000110: // MTC0
+                begin
+                    $display("Execute - MTC0");
+                end
 
-                        6'b000010: // TLBWI
-                        begin
-                            instr_sel <= 6'b010001;
-                        end
+                6'b000111: // MTHC0
+                begin
+                    $display("Execute - MTHC0");
+                end
 
-                        6'b000110: // TLBWR
-                        begin
-                            instr_sel <= 6'b010010;
-                        end
+                6'b001000: // RDPGPR
+                begin
+                    $display("Execute - RDPGPR");
+                end
 
-                        default: // WAIT
-                        begin
-                            instr_sel <= 6'b010011;
-                        end
-                    endcase
+                6'b001001: // WRPGPR
+                begin
+                    $display("Execute - WRPGPR");
+                end
+
+                6'b001010: // DERET
+                begin
+                    $display("Execute - DERET");
+                end
+
+                6'b001011: // ERET
+                begin
+                    $display("Execute - ERET");
+                end
+
+                6'b001100: // ERETNC
+                begin
+                    $display("Execute - ERETNC");
+                end
+
+                6'b001101: // TLBINV
+                begin
+                    $display("Execute - TLBINV");
+                end
+
+                6'b001110: // TLBINVF
+                begin
+                    $display("Execute - TLBINVF");
+                end
+
+                6'b001111: // TLBP
+                begin
+                    $display("Execute - TLBP");
+                end
+
+                6'b010000: // TLBR
+                begin
+                    $display("Execute - TLBR");
+                end
+
+                6'b010001: // TLBWI
+                begin
+                    $display("Execute - TLBWI");
+                end
+
+                6'b010010: // TLBWR
+                begin
+                    $display("Execute - TLBWR");
+                end
+
+                default: // WAIT
+                begin
+                    $display("Execute - WAIT");
                 end
             endcase
         end 
 
         6'b010001:
         begin
-
             $display("C1 Instructions - Not Implemented");
-
         end
 
         6'b010010:
         begin
-
             $display("C2 Instructions - Not Implemented");
-
         end
 
         6'b010110: // BGEC/BLEC(idiom), BGEZC, BLEZC, BLEZL
         begin
-
-            offset <= {10'b0, fetched_instruction[15:0]};
-
-            if (fetched_instruction[25:21] != 5'b0 && fetched_instruction[20:16] != 5'b0)
-            begin
-                if (fetched_instruction[25:21] != fetched_instruction[20:16]) // BGEC/BLEC
+            case (instr_sel)
+                6'b000000:
                 begin
-                    instr_sel <= 6'b000000;
+                    $display("Execute - BGEC/BLEC");
                 end
-                else // BGEZC
+                6'b000001: // BGEZC
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - BGEZC");
                 end
-            end
-            else if (fetched_instruction[25:21] == 5'b0) // BLEZC
-            begin
-                instr_sel <= 6'b000010;
-            end
-            else // BLEZL
-            begin
-                instr_sel <= 6'b000011;
-            end
+                6'b000010:
+                begin
+                    $display("Execute - BLEZC");
+                end
+                default: // BLEZL
+                begin
+                    $display("Execute - BLEZL");
+                end
+            endcase
         end
 
         6'b010111: // BGTC, BGTZC, BGTZL, BLTC, BLTZC
         begin
-
-            offset <= {10'b0, fetched_instruction[15:0]};
-
-            if (fetched_instruction[25:21] != 5'b0 && fetched_instruction[20:16] != 5'b0)
-            begin
-                if (fetched_instruction[25:21] != fetched_instruction[20:16]) // BLTC/BGTC(idiom)
+            case (instr_sel)
+                6'b000000:
                 begin
-                    instr_sel <= 6'b000000;
+                    $display("Execute - BLTC/BGTC");
                 end
-                else // BLTZC
+                6'b000001: // BLTZC
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - BLTZC");
                 end
-            end
-            else if (fetched_instruction[25:21] == 5'b0) // BGTZC
-            begin
-                instr_sel <= 6'b000010;
-            end
-            else // BGTZL
-            begin
-                instr_sel <= 6'b000011;
-            end
+                6'b000010:
+                begin
+                    $display("Execute - BGTZC");
+                end
+                default: // BGTZL
+                begin
+                    $display("Execute - BGTZL");
+                end
+            endcase
         end
 
         6'b011000: // BNEC, BNEZALC, BNVC
         begin
-
-            offset <= {10'b0, fetched_instruction[15:0]};
-
-            if (fetched_instruction[25:21] < fetched_instruction[20:16])
-            begin
-                if (fetched_instruction[25:21] != 5'b0) // BNEC
+            case (instr_sel)
+                6'b000000:
                 begin
-                    instr_sel <= 6'b000000;
+                    $display("Execute - BNEC");
                 end
-                else // BNEZALC
+                6'b000001:
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - BNEZALC");
                 end
-            end
-            else // BNVC
-            begin
-                instr_sel <= 6'b000010;
-            end
+                default: // BNVC
+                begin
+                    $display("Execute - BNVC");
+                end
+            endcase
         end
 
         6'b011111:
         begin
-            bp <= fetched_instruction[7:6];
-            offset <= {17'b0, fetched_instruction[15:7]};
-            msdb <= fetched_instruction[15:11];
-            lsb <= fetched_instruction[10:6];
-            i_type <= fetched_instruction[9:8];
-
-
-            case (fetched_instruction[5:0])
+            case (instr_sel)
                 6'b000000: // EXT
                 begin
-                    instr_sel <= 6'b000000;
+                    $display("Execute - EXT");
                 end
 
-                6'b000100: // INS
+                6'b000001: // INS
                 begin
-                    instr_sel <= 6'b000001;
+                    $display("Execute - INS");
                 end
 
-                6'b001111:
+                6'b000010: // CRC32B
                 begin
-                    case (fetched_instruction[8])
-                        1'b0:
-                        begin
-                            case (fetched_instruction[7:6])
-                                2'b00: // CRC32B
-                                begin
-                                    instr_sel <= 6'b000010; 
-                                end
-
-                                2'b01: // CRC32H
-                                begin
-                                    instr_sel <= 6'b000011;
-                                end
-
-                                default: // CRC32W
-                                begin
-                                    instr_sel <= 6'b000100;
-                                end
-                            endcase
-                        end
-                        default:
-                        begin
-                            case (fetched_instruction[7:6])
-                                2'b00: // CRC32CB
-                                begin
-                                    instr_sel <= 6'b000101;
-                                end
-
-                                2'b01: // CRC32CH
-                                begin
-                                    instr_sel <= 6'b000110;
-                                end
-
-                                default: // CRC32CW
-                                begin
-                                    instr_sel <= 6'b000111;
-                                end
-                            endcase  
-                        end
-                    endcase
+                    $display("Execute - CRC32B");
                 end
 
-                6'b011011: // CACHEE
+                6'b000011: // CRC32H
                 begin
-                    instr_sel <= 6'b001000;
+                    $display("Execute - CRC32H");
                 end
 
-                6'b011100: // SBE
+                6'b000100: // CRC32W
                 begin
-                    instr_sel <= 6'b001001;
+                    $display("Execute - CRC32W");
                 end
 
-                6'b011101: // SHE
+                6'b000101: // CRC32CB
                 begin
-                    instr_sel <= 6'b001010;
+                    $display("Execute - CRC32CB");
                 end
 
-                6'b011110:
+                6'b000110: // CRC32CH
                 begin
-                    case (fetched_instruction[6])
-                        1'b0: // SCE
-                        begin
-                            instr_sel <= 6'b001011;
-                        end
-                        default: // SCWPE
-                        begin
-                            instr_sel <= 6'b001100;
-                        end
-                    endcase
+                    $display("Execute - CRC32CH");
                 end
 
-                6'b011111: // SWE
+                6'b000111: // CRC32CW
                 begin
-                    instr_sel <= 6'b001101;
+                    $display("Execute - CRC32CW");
                 end
 
-                6'b100000: 
+                6'b001000: // CACHEE
                 begin
-                    case (fetched_instruction[10:6])
-                        5'b00000: // BITSWAP
-                        begin
-                            instr_sel <= 6'b001110;
-                        end
-
-                        5'b10000: // SEB
-                        begin
-                            instr_sel <= 6'b001111;
-                        end
-
-                        5'b11000: // SEH
-                        begin
-                            instr_sel <= 6'b010000;
-                        end
-
-                        5'b00010: // WSBH
-                        begin
-                            instr_sel <= 6'b010001;
-                        end
-
-                        default: // ALIGN
-                        begin
-                            instr_sel <= 6'b010010;
-                        end
-                    endcase
+                    $display("Execute - CACHEE");
                 end
 
-                6'b100011: // PREFE
+                6'b001001: // SBE
                 begin
-                    instr_sel <= 6'b010011;
+                    $display("Execute - SBE");
                 end
 
-                6'b100101: // CACHE
+                6'b001010: // SHE
                 begin
-                    instr_sel <= 6'b010100;
+                    $display("Execute - SHE");
                 end
 
-                6'b100110:
+                6'b001011: // SCE
                 begin
-                    case (fetched_instruction[6])
-                        1'b0: // SC
-                        begin
-                            instr_sel <= 6'b010101;
-                        end
-
-                        default: // SCWP
-                        begin
-                            instr_sel <= 6'b010110;
-                        end
-                    endcase
+                    $display("Execute - SCE");
                 end
 
-                6'b101000: // LBUE
+                6'b001100: // SCWPE
                 begin
-                    instr_sel <= 6'b010111;
+                    $display("Execute - SCWPE");
                 end
 
-                6'b101001: // LHUE
+                6'b001101: // SWE
                 begin
-                    instr_sel <= 6'b011000;
+                    $display("Execute - SWE");
                 end
 
-                6'b101100: // LBE
+                6'b001110: // BITSWAP
                 begin
-                    instr_sel <= 6'b011001;
+                    $display("Execute - BITSWAP");
+                end
+
+                6'b001111: // SEB
+                begin
+                    $display("Execute - SEB");
+                end
+
+                6'b010000: // SEH
+                begin
+                    $display("Execute - SEH");
+                end
+
+                6'b010001: // WSBH
+                begin
+                    $display("Execute - WSBH");
+                end
+
+                6'b010010: // ALIGN
+                begin
+                    $display("Execute - ALIGN");
+                end
+
+
+                6'b010011: // PREFE
+                begin
+                    $display("Execute - PREFE");
+                end
+
+                6'b010100: // CACHE
+                begin
+                    $display("Execute - CACHE");
+                end
+
+                6'b010101: // SC
+                begin
+                    $display("Execute - SC");
+                end
+
+                6'b010110: // SCWP
+                begin
+                    $display("Execute - SCWP");
+                end
+
+                6'b010111: // LBUE
+                begin
+                    $display("Execute - LBUE");
+                end
+
+                6'b011000: // LHUE
+                begin
+                    $display("Execute - LHUE");
+                end
+
+                6'b011001: // LBE
+                begin
+                    $display("Execute - LBE");
                 end
                 
-                6'b101101: // LHE
+                6'b011010: // LHE
                 begin
-                    instr_sel <= 6'b011010;
+                    $display("Execute - LHE");
                 end
                 
-                6'b101110:
+                6'b011011: // LLE
                 begin
-                    case (fetched_instruction[6])
-                        1'b0: // LLE
-                        begin
-                            instr_sel <= 6'b011011;
-                        end
-
-                        default: // LLWPE
-                        begin
-                            instr_sel <= 6'b011100;
-                        end
-                    endcase
+                    $display("Execute - LLE");
                 end
 
-                6'b101111: // LWE
+                6'b011100: // LLWPE
                 begin
-                    instr_sel <= 6'b011101;
+                    $display("Execute - LLWPE");
                 end
 
-                6'b110101: // PREF
+                6'b011101: // LWE
                 begin
-                    instr_sel <= 6'b011110;
+                    $display("Execute - LWE");
                 end
 
-                6'b110110:
+                6'b011110: // PREF
                 begin
-                    case (fetched_instruction[6])
-                        1'b0: // LL
-                        begin
-                            instr_sel <= 6'b011111;
-                        end
-
-                        default: // LLWP
-                        begin
-                            instr_sel <= 6'b100000;
-                        end
-                    endcase
+                    $display("Execute - PREF");
                 end
 
-                6'b111011: // RDHWR
+                6'b011111: // LL
                 begin
-                    instr_sel <= 6'b100001;
+                    $display("Execute - LL");
                 end
 
+                6'b100000: // LLWP
+                begin
+                    $display("Execute - LLWP");
+                end
+
+                6'b100001: // RDHWR
+                begin
+                    $display("Execute - RDHWR");
+                end
+
+                6'b100010:
+                begin
+                    $display("Execute - GINVI");
+                end
+                
                 default:
                 begin
-                    case (fetched_instruction[7])
-                        1'b0:
-                        begin
-                            instr_sel <= 6'b100010;
-                        end
-                        
-                        default:
-                        begin
-                            instr_sel <= 6'b100011;
-                        end
-                    endcase
+                    $display("Execute - GINVT");
                 end
             endcase
         end
 
         6'b100000: // LB
         begin
+            $display("Execute - LB");
 
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
+            memAddr = offset + base_data;
+            accessLength = 0;
+            memAccessEnable = 1;
 
         end
 
         6'b100001: // LH
         begin
-
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
-
+            $display("Execute - LH");
         end
 
         6'b100011: // LW
         begin
-
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
-
+            $display("Execute - LW");
         end
 
         6'b100100: // LBU
         begin
-
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
-
+            $display("Execute - LBU");
         end
 
         6'b100101: // LHU
         begin
-
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
-
+            $display("Execute - LHU");
         end
 
         6'b101000: // SB
         begin
+            memAddr = offset + base_data; // vAddr
+            // maybe later do vAddr -> pAddr translation
 
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
+            accessLength = 0;
+            memAccessEnable = 0;
+            executeOutput = rt_data;
 
+            $display("Execute - SB");
         end
 
         6'b101001: // SH
         begin
-
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
-
+            $display("Execute - SH");
         end
 
         6'b101011: // SW
         begin
-
-            base <= fetched_instruction[25:21];
-            offset <= {10'b0, fetched_instruction[15:0]};
-
+            $display("Execute - SW");
         end
 
         6'b110010: // BC
         begin
-
-            offset <= fetched_instruction[25:0];
-
+            $display("Execute - BC");
         end
 
         6'b110110:
         begin
-            case (fetched_instruction[25:21])
-                5'b00000: // BEQZC
+            case (instr_sel)
+                6'b000000: // BEQZC
                 begin
-                    offset <= {5'b0, fetched_instruction[20:0]};
+                    $display("Execute - BEQZC");
                 end
                 default: // JIC
                 begin
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - JIC");
                 end
             endcase
         end
 
         6'b111010: // BALC
         begin
-
-            offset <= fetched_instruction[25:0];
-
+            $display("Execute - BALC");
         end
 
         6'b111011: // ADDIUPC, ALUIPC, AUIPC, LWPC
         begin
 
-            case (fetched_instruction[20:19])
-                2'b00: // ADDIUPC
+            case (instr_sel)
+                6'b000000: // ADDIUPC
                 begin
-                    instr_sel <= 6'b000000;
-                    immediate <= fetched_instruction[18:0];
+                    $display("Execute - ADDIUPC");
                 end
 
-                2'b01: // LWPC
+                6'b000001: // LWPC
                 begin
-                    instr_sel <= 6'b000001;
-                    offset <= {7'b0, fetched_instruction[18:0]};
+                    $display("Execute - LWPC");
                 end
 
-                default:
+                6'b000010: // AUIPC
                 begin
+                    $display("Execute - AUIPC");
+                end
 
-                    immediate <= {3'b0, fetched_instruction[15:0]};
-
-                    case (fetched_instruction[16])
-                        1'b0: // AUIPC
-                        begin
-                            instr_sel <= 6'b000010;
-                        end
-
-                        default: // ALUIPC
-                        begin
-                            instr_sel <= 6'b000011;
-                        end
-                    endcase
+                default: // ALUIPC
+                begin;
+                    $display("Execute - ALUIPC");
                 end
             endcase
         end
@@ -1082,16 +916,14 @@ begin
         6'b111110:
         begin
 
-            case (fetched_instruction[25:21])
-                5'b00000: // JIALC
+            case (instr_sel)
+                6'b000000: // JIALC
                 begin
-                    instr_sel <= 6'b000000;
-                    offset <= {10'b0, fetched_instruction[15:0]};
+                    $display("Execute - JIALC");
                 end
                 default: // BNEZC
                 begin
-                    instr_sel <= 6'b000001;
-                    offset <= {5'b0, fetched_instruction[20:0]};
+                    $display("Execute - BNEZC");
                 end
             endcase
         end
