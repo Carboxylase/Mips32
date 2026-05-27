@@ -1,4 +1,4 @@
-module decoder
+module old_decoder
 (input wire clk,
 input wire [5:0] opcode,
 input wire [5:0] b5_0,

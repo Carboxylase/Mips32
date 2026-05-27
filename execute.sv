@@ -1,5 +1,6 @@
 module execute
-(input wire clk,
+(
+/* verilator lint_off UNUSEDSIGNAL */
 input wire [5:0] opcode,
 input wire [5:0] instr_sel,
 input wire [4:0] rs,
@@ -23,7 +24,9 @@ output reg [1:0] memAccessEnable,
 output reg [31:0] memAddr,
 output reg [1:0] accessLength,
 output reg [31:0] executeOutput,
-output reg [4:0] writebackReg);
+output reg [4:0] writebackReg
+/* verilator lint_off UNUSEDSIGNAL */
+);
 
 // register descriptions
 // opcode is the bits [31:26] of the fethed instruction
@@ -63,6 +66,7 @@ begin
                     else
                     begin
                         executeOutput = rs_data + rt_data;
+                        writebackReg = rd;
                     end
                 end
 

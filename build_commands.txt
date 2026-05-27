@@ -10,3 +10,5 @@ verilated_vcd_c.o: ${VERILATOR_ROOT}/include/verilated_vcd_c.cpp
 VK_GLOBAL_OBJS += verilated_vcd_c.o
 
 make -j -C obj_dir -f VtopModule.mk VtopModule
+
+obj_dir/VtopModule +instr_file=Binary/Add_Binary.txt

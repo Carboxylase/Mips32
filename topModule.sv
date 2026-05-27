@@ -1,6 +1,10 @@
 module topModule
 (input wire clk);
 
+initial begin
+    $dumpfile("testbench.vcd");
+    $dumpvars();
+end
 
 
 /* verilator lint_off UNUSEDSIGNAL */
@@ -19,20 +23,30 @@ begin
 
 end
 
-reg pc_enable;
+// reg pc_enable;
+
+// initial
+// begin
+//     pc_enable = 1'b0; 
+// end
+
+// always @(posedge clk)
+// begin
+//     if (!pc_enable)
+//     begin
+//         ;
+//     end 
+//     else
+//     begin
+//         $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
+//         program_counter <= program_counter + 1;
+//         pc_enable <= 0;
+//     end
+// end
 
 always @(posedge clk)
 begin
-    if (!pc_enable)
-    begin
-        ;
-    end 
-    else
-    begin
-        $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
-        program_counter <= program_counter + 1;
-        pc_enable <= 0;
-    end
+    $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
 end
 
 instructionMemory instMem  (.clk (clk), 
@@ -44,7 +58,13 @@ instructionMemory instMem  (.clk (clk),
 
 wire [31:0] fd_instr_fetched;
 
-decoder dec (.clk(clk),
+// reg fd_p_pc_enable;
+// always @(posedge clk)
+// begin
+//     fd_p_pc_enable <= pc_enable;
+// end
+
+decoder dec (
              .fetched_instruction(fd_instr_fetched),
              .opcode(de_opcode),
              .instr_sel(de_instr_sel),
@@ -103,7 +123,13 @@ assign de_rt_data = regFile[de_rt];
 assign de_rd_data = regFile[de_rd];
 assign de_base_data = regFile[de_base];
 
-execute ex (.clk(clk),
+// reg de_p_pc_enable;
+// always @(posedge clk)
+// begin
+//     de_p_pc_enable <= fd_p_pc_enable;
+// end
+
+execute ex (
             .opcode(de_opcode),
             .instr_sel(de_instr_sel),
             .rs(de_rs),
@@ -135,6 +161,12 @@ wire [1:0] em_accessLength;
 wire [31:0] em_executeOutput;
 wire [4:0] em_writebackReg; // to pipeline
 
+// reg em_p_pc_enable;
+// always @(posedge clk)
+// begin
+//     em_p_pc_enable <= de_p_pc_enable;
+// end
+
 dataMemory ma (.clk(clk),
                 .memAccessEnable(em_memAccessEnable),
                 .memAddr(em_memAddr),
@@ -147,12 +179,14 @@ wire [31:0] mw_readData;
 reg [1:0] mw_p_memAccessEnable; // pipeline reg
 reg [4:0] mw_p_writebackReg; // pipeline reg
 reg [31:0] mw_p_executeOutput; // pipeline register 
+// reg mw_p_pc_enable;
 
 always @(posedge clk)
 begin
     mw_p_memAccessEnable <= em_memAccessEnable;
     mw_p_writebackReg <= em_writebackReg;
     mw_p_executeOutput <= em_executeOutput;
+    // mw_p_pc_enable <= em_p_pc_enable;
 end
 
 always @(posedge clk)
@@ -178,7 +212,7 @@ begin
         end
     end
 
-    pc_enable <= 1'b1;
+    program_counter <= program_counter + 1;
 
 end
                             

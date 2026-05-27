@@ -5,7 +5,7 @@
 #include "verilated_vcd_c.h"
 #include "VtopModule.h"
 
-void clkToggle(VtopModule *tb, VerilatedVcdC *tfp);
+void clkToggle(VtopModule *tb, VerilatedVcdC *tfp, int *tickCount);
 
 int main (int argc, char**argv)
 {
@@ -32,25 +32,26 @@ int main (int argc, char**argv)
 
     // loadInstrMemory(tb, tfp, instrFile);
 
+    int tickCount = 0;
+
     for (int i = 0; i < 10; i++)
     {
-        clkToggle(tb, tfp);
+        clkToggle(tb, tfp, &tickCount);
     }
+
+    tfp->close();
 
 }
 
-void clkToggle(VtopModule *tb, VerilatedVcdC *tfp)
+void clkToggle(VtopModule *tb, VerilatedVcdC *tfp, int *tickCount)
 {
-
-    static int tickCount = 0;
-
     tb->clk = 1;
     tb->eval();
-    tfp->dump(tickCount);
-    tickCount += 1;
+    tfp->dump(*tickCount);
+    *tickCount += 1;
     
     tb->clk = 0;
     tb->eval();
-    tfp->dump(tickCount);
-    tickCount += 1;
+    tfp->dump(*tickCount);
+    *tickCount += 1;
 }

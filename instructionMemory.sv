@@ -23,7 +23,10 @@ begin
 
     if ($value$plusargs("instr_file=%s", instr_file))
     begin
+        $display("%s", instr_file);
         $readmemb(instr_file, instr_mem);
+        $display("%b", instr_mem[0]);
+        $display("%b", instr_mem[1]);
     end
 
 end
