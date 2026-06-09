@@ -46,7 +46,7 @@ end
 
 always @(posedge clk)
 begin
-    $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
+    // $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
 end
 
 instructionMemory instMem  (.clk (clk), 
@@ -59,13 +59,16 @@ instructionMemory instMem  (.clk (clk),
 wire [31:0] fd_instr_fetched;
 
 // reg fd_p_pc_enable;
-// always @(posedge clk)
-// begin
-//     fd_p_pc_enable <= pc_enable;
-// end
+
+reg [31:0] fd_p_instr_fetched;
+always @(posedge clk)
+begin
+    // fd_p_pc_enable <= pc_enable;
+    fd_p_instr_fetched <= fd_instr_fetched;
+end
 
 decoder dec (
-             .fetched_instruction(fd_instr_fetched),
+             .fetched_instruction(fd_p_instr_fetched),
              .opcode(de_opcode),
              .instr_sel(de_instr_sel),
              .rs(de_rs),
@@ -100,7 +103,7 @@ wire [4:0] de_msdb;
 wire [4:0] de_lsb;
 wire [1:0] de_i_type;
 
-
+// regfile 31 GPR
 reg [31:0] regFile [31:0];
 
 initial 
@@ -113,6 +116,7 @@ begin
     end
 end
 
+// retreive register values automatically
 wire [31:0] de_rs_data;
 wire [31:0] de_rt_data;
 wire [31:0] de_rd_data;
@@ -123,32 +127,78 @@ assign de_rt_data = regFile[de_rt];
 assign de_rd_data = regFile[de_rd];
 assign de_base_data = regFile[de_base];
 
+// pipeline registers [decode -> execute]
+// ensures execute module receives input 1 clk cycle after decode module received input
 // reg de_p_pc_enable;
-// always @(posedge clk)
-// begin
-//     de_p_pc_enable <= fd_p_pc_enable;
-// end
+reg [5:0] de_p_opcode;
+reg [5:0] de_p_instr_sel;
+reg [4:0] de_p_rs;
+reg [4:0] de_p_rt;
+reg [4:0] de_p_rd;
+reg [4:0] de_p_sa;
+reg [19:0] de_p_code;
+reg [31:0] de_p_offset;
+reg [25:0] de_p_instr_index;
+reg [31:0] de_p_immediate;
+reg [2:0] de_p_mc0_sel;
+reg [1:0] de_p_bp;
+reg [4:0] de_p_msdb;
+reg [4:0] de_p_lsb;
+reg [1:0] de_p_i_type;
+reg [31:0] de_p_rs_data;
+reg [31:0] de_p_rt_data;
+reg [31:0] de_p_rd_data;
+reg [31:0] de_p_base_data;
+
+always @(posedge clk)
+begin
+    de_p_opcode <= de_opcode;
+    de_p_instr_sel <= de_instr_sel;
+    de_p_rs <= de_rs;
+    de_p_rt <= de_rt;
+    de_p_rd <= de_rd;
+    de_p_sa <= de_sa;
+    de_p_code <= de_code;
+    de_p_offset <= de_offset;
+    de_p_instr_index <= de_instr_index;
+    de_p_immediate <= de_immediate;
+    de_p_mc0_sel <= de_mc0_sel;
+    de_p_bp <= de_bp;
+    de_p_msdb <= de_msdb;
+    de_p_lsb <= de_lsb;
+    de_p_i_type <= de_i_type;
+    de_p_rs_data <= de_rs_data;
+    de_p_rt_data <= de_rt_data;
+    de_p_rd_data <= de_rd_data;
+    de_p_base_data <= de_base_data;
+end
+
+initial
+begin
+    de_p_opcode = 6'b000000; // initialize the instruciton as NOP/SLL
+    de_p_instr_sel = 6'b001010; // initialize the instruction as NOP/SLL
+end
 
 execute ex (
-            .opcode(de_opcode),
-            .instr_sel(de_instr_sel),
-            .rs(de_rs),
-            .rt(de_rt),
-            .rd(de_rd),
-            .rs_data(de_rs_data),
-            .rt_data(de_rt_data),
-            .rd_data(de_rd_data),
-            .sa(de_sa),
-            .code(de_code),
-            .base_data(de_base_data),
-            .offset(de_offset),
-            .instr_index(de_instr_index),
-            .immediate(de_immediate),
-            .mc0_sel(de_mc0_sel),
-            .bp(de_bp),
-            .msdb(de_msdb),
-            .lsb(de_lsb),
-            .i_type(de_i_type),
+            .opcode(de_p_opcode),
+            .instr_sel(de_p_instr_sel),
+            .rs(de_p_rs),
+            .rt(de_p_rt),
+            .rd(de_p_rd),
+            .rs_data(de_p_rs_data),
+            .rt_data(de_p_rt_data),
+            .rd_data(de_p_rd_data),
+            .sa(de_p_sa),
+            .code(de_p_code),
+            .base_data(de_p_base_data),
+            .offset(de_p_offset),
+            .instr_index(de_p_instr_index),
+            .immediate(de_p_immediate),
+            .mc0_sel(de_p_mc0_sel),
+            .bp(de_p_bp),
+            .msdb(de_p_msdb),
+            .lsb(de_p_lsb),
+            .i_type(de_p_i_type),
             .memAccessEnable(em_memAccessEnable),
             .memAddr(em_memAddr),
             .accessLength(em_accessLength),
@@ -162,16 +212,28 @@ wire [31:0] em_executeOutput;
 wire [4:0] em_writebackReg; // to pipeline
 
 // reg em_p_pc_enable;
-// always @(posedge clk)
-// begin
-//     em_p_pc_enable <= de_p_pc_enable;
-// end
+
+reg [1:0] em_p_memAccessEnable;
+reg [31:0] em_p_memAddr;
+reg [1:0] em_p_accessLength;
+reg [31:0] em_p_executeOutput;
+reg [4:0] em_p_writebackReg;
+
+always @(posedge clk)
+begin
+    // em_p_pc_enable <= de_p_pc_enable;
+    em_p_memAccessEnable <= em_memAccessEnable;
+    em_p_memAddr <= em_memAddr;
+    em_p_accessLength <= em_accessLength;
+    em_p_executeOutput <= em_executeOutput;
+    em_p_writebackReg <= em_writebackReg;
+end
 
 dataMemory ma (.clk(clk),
-                .memAccessEnable(em_memAccessEnable),
-                .memAddr(em_memAddr),
-                .accessLength(em_accessLength),
-                .writeData(em_executeOutput),
+                .memAccessEnable(em_p_memAccessEnable),
+                .memAddr(em_p_memAddr),
+                .accessLength(em_p_accessLength),
+                .writeData(em_p_executeOutput),
                 .readData(mw_readData));
 
 wire [31:0] mw_readData;
@@ -183,24 +245,30 @@ reg [31:0] mw_p_executeOutput; // pipeline register
 
 always @(posedge clk)
 begin
-    mw_p_memAccessEnable <= em_memAccessEnable;
-    mw_p_writebackReg <= em_writebackReg;
-    mw_p_executeOutput <= em_executeOutput;
+    mw_p_memAccessEnable <= em_p_memAccessEnable;
+    mw_p_writebackReg <= em_p_writebackReg;
+    mw_p_executeOutput <= em_p_executeOutput;
     // mw_p_pc_enable <= em_p_pc_enable;
 end
 
 always @(posedge clk)
 begin
-    if (mw_p_memAccessEnable == 0) // write to memory, not reg
+    if (mw_p_memAccessEnable == 1) // write to memory, not reg
     begin
+        $display("Writeback: nothing to writeback");
         ;
     end
-    else if (mw_p_memAccessEnable == 1) // read from mem, write to reg
+    else if (mw_p_memAccessEnable == 2) // read from mem, write to reg
     begin
         if (mw_p_writebackReg != 5'b0)
         begin
             regFile[mw_p_writebackReg] <= mw_readData;
             $display("Writeback: Writing %h to register %d from Data Mem", mw_readData, mw_p_writebackReg);
+        end
+        else
+        begin
+            $display("Writeback: Attempting to write to ZERO Reg - Blocked");
+            ;
         end
     end
     else // write from executed stage value to reg
@@ -209,6 +277,11 @@ begin
         begin
             regFile[mw_p_writebackReg] <= mw_p_executeOutput;
             $display("Writeback: Writing %h to register %d from Data Mem", mw_p_executeOutput, mw_p_writebackReg);
+        end
+        else
+        begin
+            $display("Writeback: Attempting to write to ZERO Reg - Blocked");
+            ;
         end
     end
 

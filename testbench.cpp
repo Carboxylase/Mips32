@@ -16,6 +16,7 @@ int main (int argc, char**argv)
         return 1;
     }
     std::string instrFile = (std::string)argv[1]; // argv[0] is the program name
+    std::cout << "Using Intruction File: " << instrFile << std::endl;
 
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
@@ -34,7 +35,9 @@ int main (int argc, char**argv)
 
     int tickCount = 0;
 
-    for (int i = 0; i < 10; i++)
+    int clockCycleCount = 20;
+
+    for (int i = 0; i <= clockCycleCount; i++)
     {
         clkToggle(tb, tfp, &tickCount);
     }

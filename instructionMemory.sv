@@ -43,6 +43,7 @@ begin
         begin
             internal_addr_counter <= 32'b0;
             instr_write_out <= instr_mem[program_counter];
+            $display("program_counter: %d, instruction : %b", program_counter, instr_write_out);
         end
     end
     else

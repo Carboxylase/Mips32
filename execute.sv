@@ -122,7 +122,12 @@ begin
 
                 6'b001011: // EHB, NOP, SSNOP are implemented as SLL in hardware
                 begin
-                    $display("Execute - SLL");
+                    $display("Execute - SLL (NOP)");
+
+                    memAccessEnable = 0;
+                    executeOutput = 0;
+                    writebackReg = 0;
+
                 end
 
                 6'b001100: // JALR, JALR.HB, JR, JR.HB
@@ -213,6 +218,11 @@ begin
                 6'b011101: // SLLV
                 begin
                     $display("Execute - SLLV");
+
+                    memAccessEnable = 0;
+                    executeOutput = 0;
+                    writebackReg = 0;
+                    
                 end
 
                 6'b011110: // SLT
@@ -417,6 +427,11 @@ begin
         6'b001001: // ADDIU
         begin
             $display("Execute - ADDIU");
+
+            executeOutput = rs_data + immediate;
+
+            memAccessEnable = 0;
+            writebackReg = rt;
 
         end
 
@@ -821,18 +836,29 @@ begin
 
             memAddr = offset + base_data;
             accessLength = 0;
-            memAccessEnable = 1;
+            memAccessEnable = 2;
+            writebackReg = rt;
 
         end
 
         6'b100001: // LH
         begin
             $display("Execute - LH");
+
+            memAddr = offset + base_data;
+            accessLength = 1;
+            memAccessEnable = 2;
+            writebackReg = rt;
         end
 
         6'b100011: // LW
         begin
             $display("Execute - LW");
+
+            memAddr = offset + base_data;
+            accessLength = 2;
+            memAccessEnable = 2;
+            writebackReg = rt;
         end
 
         6'b100100: // LBU
@@ -851,7 +877,7 @@ begin
             // maybe later do vAddr -> pAddr translation
 
             accessLength = 0;
-            memAccessEnable = 0;
+            memAccessEnable = 1;
             executeOutput = rt_data;
 
             $display("Execute - SB");
@@ -860,11 +886,23 @@ begin
         6'b101001: // SH
         begin
             $display("Execute - SH");
+
+            memAddr = offset + base_data;
+            accessLength = 1;
+            memAccessEnable = 1;
+            executeOutput = rt_data;
+            writebackReg = 0;
         end
 
         6'b101011: // SW
         begin
             $display("Execute - SW");
+
+            memAddr = offset + base_data;
+            accessLength = 2;
+            memAccessEnable = 1;
+            executeOutput = rt_data;
+            writebackReg = 0;
         end
 
         6'b110010: // BC

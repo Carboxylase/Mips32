@@ -12,7 +12,7 @@ module dataMemory
 reg [31:0] dmem [2**MEM_SIZE-1:0]; 
 
 // maybe make the write/read enable signal a 2 bit value
-// where write = 0, read = 1, 2 and above is pass
+// where do nothing = 0 or 3 , write = 1, read = 2
 
 // accessLength = 0 (Byte), accessLength = 1 (half), accesslength = 2/3 (word)
 
@@ -27,7 +27,7 @@ end
 
 always @(posedge clk)
 begin
-    if (memAccessEnable == 0)
+    if (memAccessEnable == 1)
     begin
         if (accessLength == 0)
         begin
@@ -45,7 +45,7 @@ begin
             $display("Mem Access - Writing word %h to data memory address %h", writeData, memAddr);
         end
     end
-    else if (memAccessEnable == 1)
+    else if (memAccessEnable == 2)
     begin
         if (accessLength == 0)
         begin
@@ -65,6 +65,7 @@ begin
     end
     else
     begin
+        $display("Mem Access - No memory access");
         ;
     end
 end
