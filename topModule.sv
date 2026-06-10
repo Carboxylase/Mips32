@@ -117,15 +117,79 @@ begin
 end
 
 // retreive register values automatically
-wire [31:0] de_rs_data;
-wire [31:0] de_rt_data;
-wire [31:0] de_rd_data;
-wire [31:0] de_base_data;
+reg [31:0] de_rs_data;
+reg [31:0] de_rt_data;
+reg [31:0] de_rd_data;
+reg [31:0] de_base_data;
 
-assign de_rs_data = regFile[de_rs];
-assign de_rt_data = regFile[de_rt];
-assign de_rd_data = regFile[de_rd];
-assign de_base_data = regFile[de_base];
+// assign de_rs_data = regFile[de_rs];
+// assign de_rt_data = regFile[de_rt];
+// assign de_rd_data = regFile[de_rd];
+// assign de_base_data = regFile[de_base];
+
+always @(*)
+begin
+    if (de_rs == em_p_writebackReg)
+    begin
+        de_rs_data = em_p_executeOutput;
+    end
+    else if (de_rs == mw_p_writebackReg)
+    begin
+        de_rs_data = mw_p_executeOutput;
+    end
+    else
+    begin
+        de_rs_data = regFile[de_rs];
+    end
+end
+
+always @(*)
+begin
+    if (de_rt == em_p_writebackReg)
+    begin
+        de_rt_data = em_p_executeOutput;
+    end
+    else if (de_rt == mw_p_writebackReg)
+    begin
+        de_rt_data = mw_p_executeOutput;
+    end
+    else
+    begin
+        de_rt_data = regFile[de_rt];
+    end
+end
+
+always @(*)
+begin
+    if (de_rd == em_p_writebackReg)
+    begin
+        de_rd_data = em_p_executeOutput;
+    end
+    else if (de_rd == mw_p_writebackReg)
+    begin
+        de_rd_data = mw_p_executeOutput;
+    end
+    else
+    begin
+        de_rd_data = regFile[de_rd];
+    end
+end
+
+always @(*)
+begin
+    if (de_base == em_p_writebackReg)
+    begin
+        de_base_data = em_p_executeOutput;
+    end
+    else if (de_base == mw_p_writebackReg)
+    begin
+        de_base_data = mw_p_executeOutput;
+    end
+    else
+    begin
+        de_base_data = regFile[de_base];
+    end
+end
 
 // pipeline registers [decode -> execute]
 // ensures execute module receives input 1 clk cycle after decode module received input

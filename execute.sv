@@ -40,6 +40,9 @@ output reg [4:0] writebackReg
 // regWrite is for the writeback stage
 // memWrite is likely going to be rs_data, rt_data, or rd_data
 
+// execute output should be for results that will be writted to a register***********
+// PLEASE CHECK THIS OVER
+
 reg [31:0] temp32BitVal; // a temporary value for computations
 reg [32:0] temp33BitVal;
 
