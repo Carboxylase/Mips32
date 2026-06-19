@@ -6,11 +6,10 @@ initial begin
     $dumpvars();
 end
 
-
 /* verilator lint_off UNUSEDSIGNAL */
 string instr_file;
 reg rst;
-reg [31:0] program_counter;
+reg [31:0] fin_program_counter;
 reg instr_mem_write_enable;
 reg [31:0] instr_load;
 wire [3:0] instr_mem_err_code;
@@ -20,7 +19,18 @@ initial
 begin
     instr_mem_write_enable = 0;
     instr_load = 32'b0;
+end
 
+always @(posedge clk)
+begin
+    if (ef_pc_offset > 0)
+    begin
+        fin_program_counter <= de_p_program_counter + 1 + ef_pc_offset;
+    end
+    else
+    begin
+        fin_program_counter <= fin_program_counter + 1;
+    end
 end
 
 // reg pc_enable;
@@ -44,31 +54,37 @@ end
 //     end
 // end
 
-always @(posedge clk)
-begin
+// always @(posedge clk)
+// begin
     // $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
-end
+// end
 
-instructionMemory instMem  (.clk (clk), 
+instructionMemory instMem  (
+                            .clk (clk),
                             .write_enable(instr_mem_write_enable),
-                            .program_counter (program_counter),
+                            .program_counter (fin_program_counter),
                             .instr_write_in (instr_load),
                             .instr_write_out (fd_instr_fetched),
                             .error_code(instr_mem_err_code));
 
 wire [31:0] fd_instr_fetched;
+reg din_rst;
 
 // reg fd_p_pc_enable;
 
-reg [31:0] fd_p_instr_fetched;
+// reg [31:0] fd_p_instr_fetched;
+reg [31:0] fd_p_program_counter;
 always @(posedge clk)
 begin
-    // fd_p_pc_enable <= pc_enable;
-    fd_p_instr_fetched <= fd_instr_fetched;
+//     // fd_p_pc_enable <= pc_enable;
+//     fd_p_instr_fetched <= fd_instr_fetched;
+    din_rst <= eout_flush_instr;
+    fd_p_program_counter <= fin_program_counter;
 end
 
 decoder dec (
-             .fetched_instruction(fd_p_instr_fetched),
+             .rst(din_rst),
+             .fetched_instruction(fd_instr_fetched),
              .opcode(de_opcode),
              .instr_sel(de_instr_sel),
              .rs(de_rs),
@@ -129,7 +145,11 @@ reg [31:0] de_base_data;
 
 always @(*)
 begin
-    if (de_rs == em_p_writebackReg)
+    if (de_rs == em_writebackReg)
+    begin
+        de_rs_data = em_executeOutput;
+    end
+    else if(de_rs == em_p_writebackReg)
     begin
         de_rs_data = em_p_executeOutput;
     end
@@ -145,7 +165,11 @@ end
 
 always @(*)
 begin
-    if (de_rt == em_p_writebackReg)
+    if (de_rt == em_writebackReg)
+    begin
+        de_rt_data = em_executeOutput;
+    end
+    else if(de_rt == em_p_writebackReg)
     begin
         de_rt_data = em_p_executeOutput;
     end
@@ -161,7 +185,11 @@ end
 
 always @(*)
 begin
-    if (de_rd == em_p_writebackReg)
+    if (de_rd == em_writebackReg)
+    begin
+        de_rd_data = em_executeOutput;
+    end
+    else if(de_rd == em_p_writebackReg)
     begin
         de_rd_data = em_p_executeOutput;
     end
@@ -177,7 +205,11 @@ end
 
 always @(*)
 begin
-    if (de_base == em_p_writebackReg)
+    if (de_base == em_writebackReg)
+    begin
+        de_base_data = em_executeOutput;
+    end
+    else if(de_base == em_p_writebackReg)
     begin
         de_base_data = em_p_executeOutput;
     end
@@ -189,6 +221,13 @@ begin
     begin
         de_base_data = regFile[de_base];
     end
+end
+
+
+reg [31:0] de_p_program_counter;
+always @(posedge clk)
+begin
+    de_p_program_counter <= fd_p_program_counter;
 end
 
 // pipeline registers [decode -> execute]
@@ -214,6 +253,8 @@ reg [31:0] de_p_rt_data;
 reg [31:0] de_p_rd_data;
 reg [31:0] de_p_base_data;
 
+reg ein_rst;
+
 always @(posedge clk)
 begin
     de_p_opcode <= de_opcode;
@@ -235,6 +276,8 @@ begin
     de_p_rt_data <= de_rt_data;
     de_p_rd_data <= de_rd_data;
     de_p_base_data <= de_base_data;
+
+    ein_rst <= eout_flush_instr;
 end
 
 initial
@@ -244,6 +287,7 @@ begin
 end
 
 execute ex (
+            .rst(ein_rst),
             .opcode(de_p_opcode),
             .instr_sel(de_p_instr_sel),
             .rs(de_p_rs),
@@ -267,13 +311,18 @@ execute ex (
             .memAddr(em_memAddr),
             .accessLength(em_accessLength),
             .executeOutput(em_executeOutput),
-            .writebackReg(em_writebackReg));
+            .writebackReg(em_writebackReg),
+            .pc_offset(ef_pc_offset),
+            .flush_instr(eout_flush_instr));
 
 wire [1:0] em_memAccessEnable;
 wire [31:0] em_memAddr;
 wire [1:0] em_accessLength;
 wire [31:0] em_executeOutput;
 wire [4:0] em_writebackReg; // to pipeline
+wire [31:0] ef_pc_offset;
+
+wire eout_flush_instr;
 
 // reg em_p_pc_enable;
 
@@ -293,7 +342,8 @@ begin
     em_p_writebackReg <= em_writebackReg;
 end
 
-dataMemory ma (.clk(clk),
+dataMemory ma (
+                .clk(clk),
                 .memAccessEnable(em_p_memAccessEnable),
                 .memAddr(em_p_memAddr),
                 .accessLength(em_p_accessLength),
@@ -348,9 +398,6 @@ begin
             ;
         end
     end
-
-    program_counter <= program_counter + 1;
-
 end
                             
 endmodule
