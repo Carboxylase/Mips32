@@ -23,13 +23,13 @@ end
 
 always @(posedge clk)
 begin
-    if (ef_pc_offset > 0)
+    if (ef_overwritePcEnable)
     begin
-        fin_program_counter <= de_p_program_counter + 1 + ef_pc_offset;
+        fin_program_counter <= ef_program_counter_overwrite;
     end
     else
     begin
-        fin_program_counter <= fin_program_counter + 1;
+        fin_program_counter <= fin_program_counter + 4;
     end
 end
 
@@ -78,7 +78,7 @@ always @(posedge clk)
 begin
 //     // fd_p_pc_enable <= pc_enable;
 //     fd_p_instr_fetched <= fd_instr_fetched;
-    din_rst <= eout_flush_instr;
+    din_rst <= eout_flush_decode;
     fd_p_program_counter <= fin_program_counter;
 end
 
@@ -277,7 +277,8 @@ begin
     de_p_rd_data <= de_rd_data;
     de_p_base_data <= de_base_data;
 
-    ein_rst <= eout_flush_instr;
+    // ein_rst <= eout_flush_instr;
+    ein_rst <= eout_flush_execute; // just to prevent the reset signal from triggering
 end
 
 initial
@@ -307,22 +308,28 @@ execute ex (
             .msdb(de_p_msdb),
             .lsb(de_p_lsb),
             .i_type(de_p_i_type),
+            .program_counter(de_p_program_counter),
             .memAccessEnable(em_memAccessEnable),
             .memAddr(em_memAddr),
             .accessLength(em_accessLength),
             .executeOutput(em_executeOutput),
             .writebackReg(em_writebackReg),
-            .pc_offset(ef_pc_offset),
-            .flush_instr(eout_flush_instr));
+            .program_counter_overwrite(ef_program_counter_overwrite),
+            .overwritePcEnable(ef_overwritePcEnable),
+            .flush_decode(eout_flush_decode),
+            .flush_execute(eout_flush_execute));
 
 wire [1:0] em_memAccessEnable;
 wire [31:0] em_memAddr;
 wire [1:0] em_accessLength;
 wire [31:0] em_executeOutput;
 wire [4:0] em_writebackReg; // to pipeline
-wire [31:0] ef_pc_offset;
 
-wire eout_flush_instr;
+wire [31:0] ef_program_counter_overwrite;
+wire ef_overwritePcEnable;
+
+wire eout_flush_decode;
+wire eout_flush_execute;
 
 // reg em_p_pc_enable;
 

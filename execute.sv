@@ -21,13 +21,16 @@ input wire [1:0] bp,
 input wire [4:0] msdb,
 input wire [4:0] lsb,
 input wire [1:0] i_type,
+input wire [31:0] program_counter,
 output reg [1:0] memAccessEnable,
 output reg [31:0] memAddr,
 output reg [1:0] accessLength,
 output reg [31:0] executeOutput,
 output reg [4:0] writebackReg,
-output reg [31:0] pc_offset,
-output reg flush_instr
+output reg [31:0] program_counter_overwrite,
+output reg overwritePcEnable,
+output reg flush_decode,
+output reg flush_execute
 /* verilator lint_off UNUSEDSIGNAL */
 );
 
@@ -63,13 +66,24 @@ begin
         accessLength = 2'b0;
         executeOutput = 32'b0;
         writebackReg = 5'b0;
-        pc_offset = 32'b0;
-        flush_instr = 1'b1; // reset the rst signal 
+        program_counter_overwrite = 32'b0;
+        overwritePcEnable = 1'b0;
+        flush_decode = 1'b1; // reset the rst signal 
+        flush_execute = 1'b1; // reset the rst signal 
     end
     else
     begin
-        pc_offset = 32'b0;
-        flush_instr = 1'b1; // reset the rst signal
+        memAccessEnable = 2'b0;
+        memAddr = 32'b0;
+        accessLength = 2'b0;
+        executeOutput = 32'b0;
+        writebackReg = 5'b0;
+        // original reset ---------------------------------
+        program_counter_overwrite = 32'b0;
+        overwritePcEnable = 1'b0;
+        flush_decode = 1'b1; // reset the rst signal
+        flush_execute = 1'b1; // reset the rst signal 
+        // ------------------------------------------------
         case(opcode)
             6'b000000: 
             begin
@@ -93,12 +107,15 @@ begin
                     6'b000001: // ADDU
                     begin
                         $display("Execute - ADDU");
-                        temp32BitVal = rs_data + rt_data;
+                        executeOutput = rs_data + rt_data;
+                        writebackReg = rd;
                     end
 
                     6'b000010: // AND
                     begin
                         $display("Execute - AND");
+                        executeOutput =  rs_data & rt_data;
+                        writebackReg = rd;
                     end
                     6'b000011: // BREAK
                     begin
@@ -108,11 +125,15 @@ begin
                     6'b000100: // CLO
                     begin
                         $display("Execute - CLO");
+                        executeOutput = countLeadingOnes(rs_data);
+                        writebackReg = rd;
                     end
 
                     6'b000101: // CLZ
                     begin
                         $display("Execute - CLZ");
+                        executeOutput = countLeadingZeros(rs_data);
+                        writebackReg = rd;
                     end
 
                     6'b000110: // DIV
@@ -150,7 +171,7 @@ begin
 
                     end
 
-                    6'b001100: // JALR, JALR.HB, JR, JR.HB
+                    6'b001100: // JALR.HB
                     begin
                         $display("Execute - JALR.HB");
                     end
@@ -160,7 +181,7 @@ begin
                         $display("Execute - JALR");
                     end
                     
-                    6'b001110:
+                    6'b001110: // JR.HB
                     begin
                         $display("Execute - JR.HB");
                     end
@@ -168,6 +189,21 @@ begin
                     6'b001111: // JR
                     begin
                         $display("Execute - JR");
+                        if (rs_data%4 != 0)
+                        begin
+                            // throw exception
+                            $display("Adress Misaligned Exception");
+                            ;
+                        end
+                        else
+                        begin
+                            executeOutput = program_counter + 8;
+                            writebackReg = rd;
+
+                            program_counter_overwrite = rs_data;
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                        end
                     end
 
                     6'b010000: // LSA
@@ -338,6 +374,12 @@ begin
                     6'b000001: // BAL
                     begin
                         $display("Execute - BAL");
+                        program_counter_overwrite = program_counter + 4 + (offset << 2);
+                        overwritePcEnable = 1'b1;
+                        flush_decode = 1'b0;
+
+                        executeOutput = program_counter + 8;
+                        writebackReg = 5'b11111; // reg 31
                     end
                     6'b000010: // BGEZ
                     begin
@@ -361,11 +403,20 @@ begin
             6'b000010: // J
             begin
                 $display("Execute - J");
+                program_counter_overwrite = {program_counter[31:28], {2'b0, instr_index} << 2};
+                overwritePcEnable = 1'b1;
+                flush_decode = 1'b0;
             end
 
             6'b000011: // JAL
             begin
                 $display("Execute - JAL");
+                executeOutput = program_counter + 8;
+                writebackReg = 31;
+
+                program_counter_overwrite = {program_counter[31:28], {2'b0, instr_index} << 2};
+                overwritePcEnable = 1'b1;
+                flush_decode = 1'b0;
             end
 
             6'b000100: // B, BEQ
@@ -375,14 +426,16 @@ begin
                 if (rs_data == rt_data)
                 begin
                     $display("rt and rs are equal - branching");
-                    pc_offset = offset;
-                    flush_instr = 0; // 0 = flush instruction
+                    program_counter_overwrite = program_counter + 4 + (offset << 2);
+                    overwritePcEnable = 1;
+                    flush_decode = 0; // 0 = flush instruction
                 end
                 else
                 begin
                     // set the PC increment to zero
                     $display("rt and rs are not equal - not branching");
-                    pc_offset = 32'b0;
+                    program_counter_overwrite = 32'b0;
+                    overwritePcEnable = 0;
                 end
             end
 
@@ -397,6 +450,21 @@ begin
                     6'b000000:
                     begin
                         $display("Execute - BGEZALC");
+                        executeOutput = program_counter + 4;
+                        writebackReg = 31;
+
+                        if (rt_data >= 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
 
                     6'b000001: // BGEUC/BLEUC
@@ -407,6 +475,21 @@ begin
                     6'b000010:
                     begin
                         $display("Execute - BLEZALC");
+                        executeOutput = program_counter + 4;
+                        writebackReg = 31;
+
+                        if (rt_data <= 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
 
                     default: // BLEZ
@@ -422,6 +505,21 @@ begin
                     6'b000000:
                     begin
                         $display("Execute - BLTZALC");
+                        executeOutput = program_counter + 4;
+                        writebackReg = 31;
+
+                        if (rt_data < 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
                     6'b000001: // BLTUC/BGTUC
                     begin
@@ -430,6 +528,21 @@ begin
                     6'b000010:
                     begin
                         $display("Execute - BGTZALC");
+                        executeOutput = program_counter + 4;
+                        writebackReg = 31;
+
+                        if (rt_data > 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
                     default: // BGTZ
                     begin
@@ -438,7 +551,7 @@ begin
                 endcase
             end
 
-            6'b001000: // BEQC, BEQZALC, BOVC BRO WTF
+            6'b001000: // BEQC, BEQZALC, BOVC
             begin
                 case (instr_sel)
                     6'b000000: // BOVC
@@ -448,10 +561,37 @@ begin
                     6'b000001: // BEQZALC
                     begin
                         $display("Execute - BEQZALC");
+                        executeOutput = program_counter + 4;
+                        writebackReg = 31;
+
+                        if (rt_data == 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
                     default: // BEQC
                     begin
                         $display("Execute - BEQC");
+                        if (rs_data == rt_data)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
                 endcase
             end
@@ -664,10 +804,36 @@ begin
                     6'b000000:
                     begin
                         $display("Execute - BNEC");
+                        if (rs_data != rt_data)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+
+                        end
                     end
                     6'b000001:
                     begin
                         $display("Execute - BNEZALC");
+                        executeOutput = program_counter + 4;
+                        writebackReg = 31;
+
+                        if (rt_data != 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                        end
                     end
                     default: // BNVC
                     begin
@@ -940,6 +1106,10 @@ begin
             6'b110010: // BC
             begin
                 $display("Execute - BC");
+                program_counter_overwrite = program_counter + 4 + (offset << 2);
+                overwritePcEnable = 1'b1;
+                flush_decode = 1'b0;
+                flush_execute = 1'b0;
             end
 
             6'b110110:
@@ -959,6 +1129,14 @@ begin
             6'b111010: // BALC
             begin
                 $display("Execute - BALC");
+                program_counter_overwrite = program_counter + 4 + (offset << 2);
+                overwritePcEnable = 1'b1;
+                flush_decode = 1'b0;;
+                flush_execute = 1'b0;
+
+                executeOutput = program_counter + 4;
+                writebackReg = 5'b11111; // reg 31
+
             end
 
             6'b111011: // ADDIUPC, ALUIPC, AUIPC, LWPC

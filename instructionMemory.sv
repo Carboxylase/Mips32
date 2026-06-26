@@ -7,6 +7,10 @@ input wire [31:0] instr_write_in,
 output reg [31:0] instr_write_out,
 output reg [3:0] error_code);
 
+// this needs to be byte addressable, currently the work
+// around is we take in a byte addressable value and divide
+// by 4 to get the byte address
+
 reg [31:0] instr_mem [2**MEM_SIZE-1:0];
 reg [31:0] internal_addr_counter;
 string instr_file;
@@ -42,7 +46,7 @@ begin
         else
         begin
             internal_addr_counter <= 32'b0;
-            instr_write_out <= instr_mem[program_counter];
+            instr_write_out <= instr_mem[program_counter/4];
             $display("program_counter: %d, instruction : %b", program_counter, instr_write_out);
         end
     end

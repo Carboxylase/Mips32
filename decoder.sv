@@ -414,7 +414,7 @@ begin
                     5'b10001: // BAL
                     begin
                         instr_sel = 6'b000001;
-                        offset = signExtend({16'b0, fetched_instruction[15:0]}, 16);
+                        offset = signExtend({16'b0, fetched_instruction[15:0]}, 16 );
                         $display("Decoder - BAL");
                     end
                     5'b00001: // BGEZ
@@ -527,7 +527,7 @@ begin
                 end
             end
 
-            6'b001000: // BEQC, BEQZALC, BOVC BRO WTF
+            6'b001000: // BEQC, BEQZALC, BOVC
             begin
                 offset = signExtend({16'b0, fetched_instruction[15:0]}, 16);
 
