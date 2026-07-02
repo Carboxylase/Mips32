@@ -1,3 +1,5 @@
+`ifndef COMMON_FUNCTIONS
+`define COMMON_FUNCTIONS
 function [31:0] signExtend
     (input [31:0] originalBits, [4:0] originalLen);
     reg signBit;
@@ -49,3 +51,4 @@ function [31:0] countLeadingZeros
         countLeadingZeros = temp;
     end
 endfunction
+`endif

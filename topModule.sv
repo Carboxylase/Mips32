@@ -7,7 +7,7 @@ initial begin
 end
 
 /* verilator lint_off UNUSEDSIGNAL */
-string instr_file;
+//string instr_file;
 reg rst;
 reg [31:0] fin_program_counter;
 reg instr_mem_write_enable;
@@ -110,9 +110,9 @@ wire [4:0] de_rd;
 wire [4:0] de_sa;
 wire [19:0] de_code;
 wire [4:0] de_base;
-wire [31:0] de_offset;
+wire signed [31:0] de_offset;
 wire [25:0] de_instr_index;
-wire [31:0] de_immediate;
+wire signed [31:0] de_immediate;
 wire [2:0] de_mc0_sel;
 wire [1:0] de_bp;
 wire [4:0] de_msdb;
@@ -120,7 +120,7 @@ wire [4:0] de_lsb;
 wire [1:0] de_i_type;
 
 // regfile 31 GPR
-reg [31:0] regFile [31:0];
+reg signed [31:0] regFile [31:0];
 
 initial 
 begin
@@ -133,10 +133,10 @@ begin
 end
 
 // retreive register values automatically
-reg [31:0] de_rs_data;
-reg [31:0] de_rt_data;
-reg [31:0] de_rd_data;
-reg [31:0] de_base_data;
+reg signed [31:0] de_rs_data;
+reg signed [31:0] de_rt_data;
+reg signed [31:0] de_rd_data;
+reg signed [31:0] de_base_data;
 
 // assign de_rs_data = regFile[de_rs];
 // assign de_rt_data = regFile[de_rt];
@@ -240,18 +240,18 @@ reg [4:0] de_p_rt;
 reg [4:0] de_p_rd;
 reg [4:0] de_p_sa;
 reg [19:0] de_p_code;
-reg [31:0] de_p_offset;
+reg signed [31:0] de_p_offset;
 reg [25:0] de_p_instr_index;
-reg [31:0] de_p_immediate;
+reg signed [31:0] de_p_immediate;
 reg [2:0] de_p_mc0_sel;
 reg [1:0] de_p_bp;
 reg [4:0] de_p_msdb;
 reg [4:0] de_p_lsb;
 reg [1:0] de_p_i_type;
-reg [31:0] de_p_rs_data;
-reg [31:0] de_p_rt_data;
-reg [31:0] de_p_rd_data;
-reg [31:0] de_p_base_data;
+reg signed [31:0] de_p_rs_data;
+reg signed [31:0] de_p_rt_data;
+reg signed [31:0] de_p_rd_data;
+reg signed [31:0] de_p_base_data;
 
 reg ein_rst;
 
@@ -322,7 +322,7 @@ execute ex (
 wire [1:0] em_memAccessEnable;
 wire [31:0] em_memAddr;
 wire [1:0] em_accessLength;
-wire [31:0] em_executeOutput;
+wire signed [31:0] em_executeOutput;
 wire [4:0] em_writebackReg; // to pipeline
 
 wire [31:0] ef_program_counter_overwrite;
@@ -336,7 +336,7 @@ wire eout_flush_execute;
 reg [1:0] em_p_memAccessEnable;
 reg [31:0] em_p_memAddr;
 reg [1:0] em_p_accessLength;
-reg [31:0] em_p_executeOutput;
+reg signed [31:0] em_p_executeOutput;
 reg [4:0] em_p_writebackReg;
 
 always @(posedge clk)
@@ -361,7 +361,7 @@ wire [31:0] mw_readData;
 
 reg [1:0] mw_p_memAccessEnable; // pipeline reg
 reg [4:0] mw_p_writebackReg; // pipeline reg
-reg [31:0] mw_p_executeOutput; // pipeline register 
+reg signed [31:0] mw_p_executeOutput; // pipeline register 
 // reg mw_p_pc_enable;
 
 always @(posedge clk)

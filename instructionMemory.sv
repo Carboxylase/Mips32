@@ -13,7 +13,9 @@ output reg [3:0] error_code);
 
 reg [31:0] instr_mem [2**MEM_SIZE-1:0];
 reg [31:0] internal_addr_counter;
-string instr_file;
+
+//string instr_file;
+reg [1023:0] instr_file;
 
 initial
 begin
@@ -24,7 +26,7 @@ begin
     end
 
     internal_addr_counter = 32'b0;
-
+    
     if ($value$plusargs("instr_file=%s", instr_file))
     begin
         $display("%s", instr_file);
@@ -32,7 +34,6 @@ begin
         $display("%b", instr_mem[0]);
         $display("%b", instr_mem[1]);
     end
-
 end
 
 always @ (posedge clk)
@@ -54,8 +55,7 @@ begin
     begin
         instr_mem[internal_addr_counter] <= instr_write_in;
         internal_addr_counter <= internal_addr_counter + 1;
-    end
-    
+    end 
 end
 
 endmodule

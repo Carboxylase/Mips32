@@ -14,7 +14,7 @@ output reg [19:0] code,
 output reg [4:0] base,
 output reg [31:0] offset,
 output reg [25:0] instr_index,
-output reg [31:0] immediate,
+output reg signed [31:0] immediate,
 output reg [2:0] mc0_sel,
 output reg [1:0] bp,
 output reg [4:0] msdb,
@@ -572,19 +572,19 @@ begin
 
             6'b001100: // ANDI
             begin
-                immediate = signExtend({16'b0, fetched_instruction[15:0]}, 16);
+                immediate = {16'b0, fetched_instruction[15:0]}; // ANDI require imm to be zero extended
                 $display("Decoder - ANDI");
             end
 
             6'b001101: // ORI
             begin
-                immediate = signExtend({16'b0, fetched_instruction[15:0]}, 16);
+                immediate = {16'b0, fetched_instruction[15:0]}; // ORI requires imm to be zero extended
                 $display("Decoder - ORI");
             end
 
             6'b001110: // XORI
             begin
-                immediate = signExtend({16'b0, fetched_instruction[15:0]}, 16);
+                immediate = {16'b0, fetched_instruction[15:0]}; // XORI requires the imm to be zero extended
                 $display("Decoder - XORI");
             end
 
