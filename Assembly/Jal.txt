@@ -1,0 +1,10 @@
+ADDIU t1,zero,1
+ADDIU t2,zero,1
+JAL 7
+NOP
+ADD t3,t2,t1
+J 10
+NOP
+ADDIU t1,t1,1
+JR ra
+NOP

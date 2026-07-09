@@ -1,0 +1,10 @@
+ADDIU t1,zero,1
+BEQZALC t1,4
+ADDIU t1,zero,1
+ADDIU t2,zero,1
+ADD t3,t1,t2
+J 10
+NOP
+ADDIU t1,zero,2
+ADDIU t2,zero,2
+ADD t3,t1,t2

@@ -1,0 +1,303 @@
+$date
+   Wed Jul  1 05:39:34 2026
+$end
+
+$version
+  2025.2
+  $dumpfile ("testbench.vcd") 
+$end
+
+$timescale
+  1ps
+$end
+
+$scope module tb $end
+$scope module top $end
+$var wire 1 ! clk $end
+$var reg 1 " rst $end
+$var reg 32 # fin_program_counter [31:0] $end
+$var reg 1 $ instr_mem_write_enable $end
+$var reg 32 % instr_load [31:0] $end
+$var wire 4 & instr_mem_err_code [3:0] $end
+$var wire 32 ' fd_instr_fetched [31:0] $end
+$var reg 1 ( din_rst $end
+$var reg 32 ) fd_p_program_counter [31:0] $end
+$var wire 6 * de_opcode [5:0] $end
+$var wire 6 + de_instr_sel [5:0] $end
+$var wire 5 , de_rs [4:0] $end
+$var wire 5 - de_rt [4:0] $end
+$var wire 5 . de_rd [4:0] $end
+$var wire 5 / de_sa [4:0] $end
+$var wire 20 0 de_code [19:0] $end
+$var wire 5 1 de_base [4:0] $end
+$var wire 32 2 de_offset [31:0] $end
+$var wire 26 3 de_instr_index [25:0] $end
+$var wire 32 4 de_immediate [31:0] $end
+$var wire 3 5 de_mc0_sel [2:0] $end
+$var wire 2 6 de_bp [1:0] $end
+$var wire 5 7 de_msdb [4:0] $end
+$var wire 5 8 de_lsb [4:0] $end
+$var wire 2 9 de_i_type [1:0] $end
+$var reg 32 : de_rs_data [31:0] $end
+$var reg 32 ; de_rt_data [31:0] $end
+$var reg 32 < de_rd_data [31:0] $end
+$var reg 32 = de_base_data [31:0] $end
+$var reg 32 > de_p_program_counter [31:0] $end
+$var reg 6 ? de_p_opcode [5:0] $end
+$var reg 6 @ de_p_instr_sel [5:0] $end
+$var reg 5 A de_p_rs [4:0] $end
+$var reg 5 B de_p_rt [4:0] $end
+$var reg 5 C de_p_rd [4:0] $end
+$var reg 5 D de_p_sa [4:0] $end
+$var reg 20 E de_p_code [19:0] $end
+$var reg 32 F de_p_offset [31:0] $end
+$var reg 26 G de_p_instr_index [25:0] $end
+$var reg 32 H de_p_immediate [31:0] $end
+$var reg 3 I de_p_mc0_sel [2:0] $end
+$var reg 2 J de_p_bp [1:0] $end
+$var reg 5 K de_p_msdb [4:0] $end
+$var reg 5 L de_p_lsb [4:0] $end
+$var reg 2 M de_p_i_type [1:0] $end
+$var reg 32 N de_p_rs_data [31:0] $end
+$var reg 32 O de_p_rt_data [31:0] $end
+$var reg 32 P de_p_rd_data [31:0] $end
+$var reg 32 Q de_p_base_data [31:0] $end
+$var reg 1 R ein_rst $end
+$var wire 2 S em_memAccessEnable [1:0] $end
+$var wire 32 T em_memAddr [31:0] $end
+$var wire 2 U em_accessLength [1:0] $end
+$var wire 32 V em_executeOutput [31:0] $end
+$var wire 5 W em_writebackReg [4:0] $end
+$var wire 32 X ef_program_counter_overwrite [31:0] $end
+$var wire 1 Y ef_overwritePcEnable $end
+$var wire 1 Z eout_flush_decode $end
+$var wire 1 [ eout_flush_execute $end
+$var reg 2 \ em_p_memAccessEnable [1:0] $end
+$var reg 32 ] em_p_memAddr [31:0] $end
+$var reg 2 ^ em_p_accessLength [1:0] $end
+$var reg 32 _ em_p_executeOutput [31:0] $end
+$var reg 5 ` em_p_writebackReg [4:0] $end
+$var wire 32 a mw_readData [31:0] $end
+$var reg 2 b mw_p_memAccessEnable [1:0] $end
+$var reg 5 c mw_p_writebackReg [4:0] $end
+$var reg 32 d mw_p_executeOutput [31:0] $end
+$scope module instMem $end
+$var wire 1 ! clk $end
+$var wire 1 e write_enable $end
+$var wire 32 f program_counter [31:0] $end
+$var wire 32 g instr_write_in [31:0] $end
+$var reg 32 h instr_write_out [31:0] $end
+$var reg 4 i error_code [3:0] $end
+$var reg 32 j internal_addr_counter [31:0] $end
+$var reg 1024 k instr_file [1023:0] $end
+$scope begin Block21_4 $end
+$var integer 32 l i [31:0] $end
+$upscope $end
+$upscope $end
+$scope module dec $end
+$var wire 1 m rst $end
+$var wire 32 ' fetched_instruction [31:0] $end
+$var reg 6 n opcode [5:0] $end
+$var reg 6 o instr_sel [5:0] $end
+$var reg 5 p rs [4:0] $end
+$var reg 5 q rt [4:0] $end
+$var reg 5 r rd [4:0] $end
+$var reg 5 s sa [4:0] $end
+$var reg 20 t code [19:0] $end
+$var reg 5 u base [4:0] $end
+$var reg 32 v offset [31:0] $end
+$var reg 26 w instr_index [25:0] $end
+$var reg 32 x immediate [31:0] $end
+$var reg 3 y mc0_sel [2:0] $end
+$var reg 2 z bp [1:0] $end
+$var reg 5 { msdb [4:0] $end
+$var reg 5 | lsb [4:0] $end
+$var reg 2 } i_type [1:0] $end
+$upscope $end
+$scope begin Block126_10 $end
+$var integer 32 ~ i [31:0] $end
+$upscope $end
+$scope module ex $end
+$var wire 1 !! rst $end
+$var wire 6 "! opcode [5:0] $end
+$var wire 6 #! instr_sel [5:0] $end
+$var wire 5 $! rs [4:0] $end
+$var wire 5 %! rt [4:0] $end
+$var wire 5 &! rd [4:0] $end
+$var wire 32 '! rs_data [31:0] $end
+$var wire 32 (! rt_data [31:0] $end
+$var wire 32 )! rd_data [31:0] $end
+$var wire 5 *! sa [4:0] $end
+$var wire 20 +! code [19:0] $end
+$var wire 32 ,! base_data [31:0] $end
+$var wire 32 -! offset [31:0] $end
+$var wire 26 .! instr_index [25:0] $end
+$var wire 32 /! immediate [31:0] $end
+$var wire 3 0! mc0_sel [2:0] $end
+$var wire 2 1! bp [1:0] $end
+$var wire 5 2! msdb [4:0] $end
+$var wire 5 3! lsb [4:0] $end
+$var wire 2 4! i_type [1:0] $end
+$var wire 32 5! program_counter [31:0] $end
+$var reg 2 6! memAccessEnable [1:0] $end
+$var reg 32 7! memAddr [31:0] $end
+$var reg 2 8! accessLength [1:0] $end
+$var reg 32 9! executeOutput [31:0] $end
+$var reg 5 :! writebackReg [4:0] $end
+$var reg 32 ;! program_counter_overwrite [31:0] $end
+$var reg 1 <! overwritePcEnable $end
+$var reg 1 =! flush_decode $end
+$var reg 1 >! flush_execute $end
+$var reg 32 ?! temp32BitVal [31:0] $end
+$var reg 33 @! temp33BitVal [32:0] $end
+$upscope $end
+$scope module ma $end
+$var wire 1 ! clk $end
+$var wire 2 A! memAccessEnable [1:0] $end
+$var wire 32 B! memAddr [31:0] $end
+$var wire 2 C! accessLength [1:0] $end
+$var wire 32 D! writeData [31:0] $end
+$var reg 32 E! readData [31:0] $end
+$scope begin Block20_22 $end
+$var integer 32 F! i [31:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+
+#0
+$dumpvars
+0!
+x!!
+x"
+b0 "!
+bx #
+b1010 #!
+0$
+bx $!
+b0 %
+bx %!
+bx &
+bx &!
+bx '
+bx '!
+x(
+bx (!
+bx )
+bx )!
+bx *
+bx *!
+bx +
+bx +!
+bx ,
+bx ,!
+bx -
+bx -!
+bx .
+bx .!
+bx /
+bx /!
+bx 0
+bx 0!
+bx 1
+bx 1!
+bx 2
+bx 2!
+bx 3
+bx 3!
+bx 4
+bx 4!
+bx 5
+bx 5!
+bx 6
+bx 6!
+bx 7
+bx 7!
+bx 8
+bx 8!
+bx 9
+bx 9!
+bx :
+bx :!
+bx ;
+bx ;!
+bx <
+x<!
+bx =
+x=!
+bx >
+x>!
+b0 ?
+bx ?!
+b1010 @
+bx @!
+bx A
+bx A!
+bx B
+bx B!
+bx C
+bx C!
+bx D
+bx D!
+bx E
+bx E!
+bx F
+b0 F!
+bx G
+bx H
+bx I
+bx J
+bx K
+bx L
+bx M
+bx N
+bx O
+bx P
+bx Q
+xR
+bx S
+bx T
+bx U
+bx V
+bx W
+bx X
+xY
+xZ
+x[
+bx \
+bx ]
+bx ^
+bx _
+bx `
+bx a
+bx b
+bx c
+bx d
+0e
+bx f
+b0 g
+bx h
+bx i
+b0 j
+bx k
+b10000000000 l
+xm
+bx n
+bx o
+bx p
+bx q
+bx r
+bx s
+bx t
+bx u
+bx v
+bx w
+bx x
+bx y
+bx z
+bx {
+bx |
+bx }
+b100000 ~
+$end

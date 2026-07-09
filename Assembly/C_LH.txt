@@ -1,0 +1,4 @@
+ADDIU zero,v0,16
+ADDIU zero,v1,4
+SW v0,0(v1)
+LW a0,0(v1)

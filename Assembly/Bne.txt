@@ -1,0 +1,4 @@
+ADDIU t0,zero,4
+ADDIU t1,zero,5
+BNE t0,t1,2
+ADDIU t2,zero,8

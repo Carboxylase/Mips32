@@ -1,0 +1,9 @@
+ADDIU t0,zero,4
+ADDIU t1,zero,4
+BEQ t0,t1,3
+ADDIU t2,zero,8
+ADDIU t3,zero,9
+ADDIU t4,zero,10
+ADDIU t5,zero,11
+ADDIU t6,zero,12
+ADDIU t7,zero,13

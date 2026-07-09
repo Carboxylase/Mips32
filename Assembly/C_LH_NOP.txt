@@ -1,0 +1,8 @@
+ADDIU v0,zero,16
+ADDIU v1,zero,4
+NOP
+NOP
+SW v0,0(v1)
+NOP
+NOP
+LW a0,0(v1)
