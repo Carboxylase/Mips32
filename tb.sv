@@ -2,7 +2,7 @@
 
 module tb();
 
-localparam CLK_PERIOD = 10;
+localparam CLK_PERIOD = 2;
 
 reg clk = 1'b0;
 
@@ -13,7 +13,7 @@ topModule top(
 
 always
 begin
-    clk = ~clk; 
+    clk = #(CLK_PERIOD/2) ~clk; 
 end
 
 endmodule

@@ -1,3 +1,5 @@
+`timescale 1 ns/ 10 ps // time unit / time precision
+
 module topModule
 (input wire clk);
 
@@ -6,9 +8,10 @@ initial begin
     $dumpvars();
 end
 
+// ------------------------- instMem input -----------------------------------
 /* verilator lint_off UNUSEDSIGNAL */
 //string instr_file;
-reg rst;
+// reg rst;
 reg [31:0] fin_program_counter;
 reg instr_mem_write_enable;
 reg [31:0] instr_load;
@@ -19,7 +22,11 @@ initial
 begin
     instr_mem_write_enable = 0;
     instr_load = 32'b0;
+    fin_program_counter = 32'b0;
 end
+
+wire [31:0] ef_program_counter_overwrite;
+wire ef_overwritePcEnable;
 
 always @(posedge clk)
 begin
@@ -33,31 +40,8 @@ begin
     end
 end
 
-// reg pc_enable;
-
-// initial
-// begin
-//     pc_enable = 1'b0; 
-// end
-
-// always @(posedge clk)
-// begin
-//     if (!pc_enable)
-//     begin
-//         ;
-//     end 
-//     else
-//     begin
-//         $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
-//         program_counter <= program_counter + 1;
-//         pc_enable <= 0;
-//     end
-// end
-
-// always @(posedge clk)
-// begin
-    // $display("program_counter: %d, instruction: %b", program_counter, fd_instr_fetched);
-// end
+// ------------------------- instMem output-----------------------------------
+wire [31:0] fd_instr_fetched;
 
 instructionMemory instMem  (
                             .clk (clk),
@@ -67,20 +51,41 @@ instructionMemory instMem  (
                             .instr_write_out (fd_instr_fetched),
                             .error_code(instr_mem_err_code));
 
-wire [31:0] fd_instr_fetched;
+// ------------------------------ decode input ------------------------------------
 reg din_rst;
-
-// reg fd_p_pc_enable;
-
-// reg [31:0] fd_p_instr_fetched;
 reg [31:0] fd_p_program_counter;
+
+wire eout_flush_decode;
+
+initial
+begin
+    din_rst = 1'b1;
+    fd_p_program_counter = 32'b0;
+end
+
 always @(posedge clk)
 begin
-//     // fd_p_pc_enable <= pc_enable;
-//     fd_p_instr_fetched <= fd_instr_fetched;
     din_rst <= eout_flush_decode;
     fd_p_program_counter <= fin_program_counter;
 end
+
+// ------------------------------ decode output -------------------------------------
+wire [5:0] de_opcode;
+wire [5:0] de_instr_sel;
+wire [4:0] de_rs;
+wire [4:0] de_rt;
+wire [4:0] de_rd;
+wire [4:0] de_sa;
+wire [19:0] de_code;
+wire [4:0] de_base;
+wire signed [31:0] de_offset;
+wire [25:0] de_instr_index;
+wire signed [31:0] de_immediate;
+wire [2:0] de_mc0_sel;
+wire [1:0] de_bp;
+wire [4:0] de_msdb;
+wire [4:0] de_lsb;
+wire [1:0] de_i_type;
 
 decoder dec (
              .rst(din_rst),
@@ -102,22 +107,7 @@ decoder dec (
              .lsb(de_lsb),
              .i_type(de_i_type));
 
-wire [5:0] de_opcode;
-wire [5:0] de_instr_sel;
-wire [4:0] de_rs;
-wire [4:0] de_rt;
-wire [4:0] de_rd;
-wire [4:0] de_sa;
-wire [19:0] de_code;
-wire [4:0] de_base;
-wire signed [31:0] de_offset;
-wire [25:0] de_instr_index;
-wire signed [31:0] de_immediate;
-wire [2:0] de_mc0_sel;
-wire [1:0] de_bp;
-wire [4:0] de_msdb;
-wire [4:0] de_lsb;
-wire [1:0] de_i_type;
+
 
 // regfile 31 GPR
 reg signed [31:0] regFile [31:0];
@@ -138,10 +128,29 @@ reg signed [31:0] de_rt_data;
 reg signed [31:0] de_rd_data;
 reg signed [31:0] de_base_data;
 
-// assign de_rs_data = regFile[de_rs];
-// assign de_rt_data = regFile[de_rt];
-// assign de_rd_data = regFile[de_rd];
-// assign de_base_data = regFile[de_base];
+// defining pipeline registers
+wire [4:0] em_writebackReg;
+wire signed [31:0] em_executeOutput;
+
+reg signed [31:0] em_p_executeOutput;
+reg [4:0] em_p_writebackReg;
+
+reg [4:0] mw_p_writebackReg; // pipeline reg
+reg signed [31:0] mw_p_executeOutput; // pipeline register 
+
+initial
+begin
+    de_rs_data = 32'b0;
+    de_rt_data = 32'b0;
+    de_rd_data = 32'b0;
+    de_base_data = 32'b0;
+
+    em_p_writebackReg = 5'b0;
+    em_p_executeOutput = 32'b0;
+
+    mw_p_writebackReg = 5'b0;
+    mw_p_executeOutput = 32'b0;
+end
 
 always @(*)
 begin
@@ -225,6 +234,11 @@ end
 
 
 reg [31:0] de_p_program_counter;
+initial 
+begin
+    de_p_program_counter = 32'b0;
+end
+
 always @(posedge clk)
 begin
     de_p_program_counter <= fd_p_program_counter;
@@ -255,6 +269,33 @@ reg signed [31:0] de_p_base_data;
 
 reg ein_rst;
 
+wire eout_flush_execute;
+
+initial
+begin
+    de_p_opcode = 6'b000000; // initialize the instruciton as NOP/SLL
+    de_p_instr_sel = 6'b001010; // initialize the instruction as NOP/SLL
+    de_p_rs = 5'b0;
+    de_p_rt = 5'b0;
+    de_p_rd = 5'b0;
+    de_p_sa = 5'b0;
+    de_p_code = 20'b0;
+    de_p_offset = 32'b0;
+    de_p_instr_index = 26'b0;
+    de_p_immediate = 32'b0;
+    de_p_mc0_sel = 3'b0;
+    de_p_bp = 2'b0;
+    de_p_msdb = 5'b0;
+    de_p_lsb = 5'b0;
+    de_p_i_type = 2'b0;
+    de_p_rs_data = 32'b0;
+    de_p_rt_data = 32'b0;
+    de_p_rd_data = 32'b0;
+    de_p_base_data = 32'b0;
+
+    ein_rst = 1'b1;
+end
+
 always @(posedge clk)
 begin
     de_p_opcode <= de_opcode;
@@ -281,11 +322,13 @@ begin
     ein_rst <= eout_flush_execute; // just to prevent the reset signal from triggering
 end
 
-initial
-begin
-    de_p_opcode = 6'b000000; // initialize the instruciton as NOP/SLL
-    de_p_instr_sel = 6'b001010; // initialize the instruction as NOP/SLL
-end
+// ---------------------------execute output ------------------------------
+wire [1:0] em_memAccessEnable;
+wire [31:0] em_memAddr;
+wire [1:0] em_accessLength;
+wire em_memAccessUnsigned;
+// the rest of the execute output are above the modules that require the output as input
+
 
 execute ex (
             .rst(ein_rst),
@@ -312,6 +355,7 @@ execute ex (
             .memAccessEnable(em_memAccessEnable),
             .memAddr(em_memAddr),
             .accessLength(em_accessLength),
+            .memAccessUnsigned(em_memAccessUnsigned),
             .executeOutput(em_executeOutput),
             .writebackReg(em_writebackReg),
             .program_counter_overwrite(ef_program_counter_overwrite),
@@ -319,25 +363,19 @@ execute ex (
             .flush_decode(eout_flush_decode),
             .flush_execute(eout_flush_execute));
 
-wire [1:0] em_memAccessEnable;
-wire [31:0] em_memAddr;
-wire [1:0] em_accessLength;
-wire signed [31:0] em_executeOutput;
-wire [4:0] em_writebackReg; // to pipeline
-
-wire [31:0] ef_program_counter_overwrite;
-wire ef_overwritePcEnable;
-
-wire eout_flush_decode;
-wire eout_flush_execute;
-
-// reg em_p_pc_enable;
-
+// ------------------- data memory input --------------------------------
 reg [1:0] em_p_memAccessEnable;
 reg [31:0] em_p_memAddr;
 reg [1:0] em_p_accessLength;
-reg signed [31:0] em_p_executeOutput;
-reg [4:0] em_p_writebackReg;
+reg em_p_memAccessUnsigned;
+
+initial
+begin
+    em_p_memAccessEnable = 2'b0;
+    em_p_memAddr = 32'b0;
+    em_p_accessLength = 2'b0;
+    em_p_memAccessUnsigned = 1'b0;
+end
 
 always @(posedge clk)
 begin
@@ -347,7 +385,11 @@ begin
     em_p_accessLength <= em_accessLength;
     em_p_executeOutput <= em_executeOutput;
     em_p_writebackReg <= em_writebackReg;
+    em_p_memAccessUnsigned <= em_memAccessUnsigned;
 end
+
+// ----------------- data memory output --------------------------------
+wire [31:0] mw_readData;
 
 dataMemory ma (
                 .clk(clk),
@@ -355,13 +397,17 @@ dataMemory ma (
                 .memAddr(em_p_memAddr),
                 .accessLength(em_p_accessLength),
                 .writeData(em_p_executeOutput),
+                .memAccessUnsigned(em_p_memAccessUnsigned),
                 .readData(mw_readData));
 
-wire [31:0] mw_readData;
+
 
 reg [1:0] mw_p_memAccessEnable; // pipeline reg
-reg [4:0] mw_p_writebackReg; // pipeline reg
-reg signed [31:0] mw_p_executeOutput; // pipeline register 
+
+initial
+begin
+    mw_p_memAccessEnable = 2'b0;
+end
 // reg mw_p_pc_enable;
 
 always @(posedge clk)

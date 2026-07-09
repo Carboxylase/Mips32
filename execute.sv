@@ -1,3 +1,7 @@
+`timescale 1 ns/ 10 ps // time unit / time precision
+
+`include "commonFunctions.sv"
+
 module execute
 (
 /* verilator lint_off UNUSEDSIGNAL */
@@ -25,6 +29,7 @@ input wire [31:0] program_counter,
 output reg [1:0] memAccessEnable,
 output reg [31:0] memAddr,
 output reg [1:0] accessLength,
+output reg memAccessUnsigned,
 output reg signed [31:0] executeOutput,
 output reg [4:0] writebackReg,
 output reg [31:0] program_counter_overwrite,
@@ -49,12 +54,25 @@ output reg flush_execute
 // execute output should be for results that will be writted to a register***********
 // PLEASE CHECK THIS OVER
 
-reg signed [31:0] temp32BitVal; // a temporary value for computations
+reg signed [31:0] temp32BitVal1; // a temporary value for computations
+reg signed [31:0] temp32BitVal2;
 reg signed [32:0] temp33BitVal;
 
 initial
 begin
+    memAccessEnable = 2'b0;
+    memAddr = 32'b0;
+    accessLength = 2'b0;
+    executeOutput = 32'b0;
+    writebackReg = 5'b0;
+    program_counter_overwrite = 32'b0;
+    overwritePcEnable = 1'b0;
+    flush_decode = 1'b1;
+    flush_execute = 1'b1;
 
+    temp32BitVal1 = 32'b0;
+    temp32BitVal2 = 32'b0;
+    temp33BitVal = 33'b0;
 end
 
 always @(*)
@@ -91,15 +109,15 @@ begin
                     6'b000000: // ADD
                     begin
                         $display("Execute - ADD");
-                        temp32BitVal = rs_data + rt_data;
+                        temp32BitVal1 = rs_data + rt_data;
                         temp33BitVal = rs_data + rt_data;
-                        if (temp32BitVal != temp33BitVal[31:0])
+                        if (temp32BitVal1 != temp33BitVal[31:0])
                         begin
                             // signal exception
                         end
                         else
                         begin
-                            executeOutput = rs_data + rt_data;
+                            executeOutput = temp32BitVal1;
                             writebackReg = rd;
                         end
                     end
@@ -230,51 +248,77 @@ begin
                     6'b010000: // LSA
                     begin
                         $display("Execute - LSA");
+                        executeOutput = ((rs_data << sa) + rt_data);
+                        writebackReg = rd;
                     end
 
                     6'b010001: // MUL
                     begin
                         $display("Execute - MUL");
+                        executeOutput = rs_data * rt_data;
+                        writebackReg = rd;
                     end
 
                     6'b010010: // MUH
                     begin
                         $display("Execute - MUH");
+                        executeOutput = rs_data * rt_data;
+                        writebackReg = rd;
                     end
 
                     6'b010011: // MULU
                     begin
                         $display("Execute - MULU");
+                        executeOutput = $unsigned(rs_data) * $unsigned(rt_data);
+                        writebackReg = rd;
                     end
 
                     6'b010100: // MUHU
                     begin
                         $display("Execute - MUHU");
+                        executeOutput = $unsigned(rs_data) * $unsigned(rt_data);
+                        writebackReg = rd;
                     end
 
                     6'b010101: // NOR
                     begin
                         $display("Execute - NOR");
+                        executeOutput = ~(rs_data | rt_data);
+                        writebackReg = rd;
                     end
 
-                    6'b010110: // ROTR, SRL
+                    6'b010110: // ROTR
                     begin
                         $display("Execute - ROTR");
+                        temp32BitVal1 = rt_data >> sa;
+                        temp32BitVal2 = rt_data << (32 - sa);
+                        executeOutput = temp32BitVal1 + temp32BitVal2;
+                        
+                        writebackReg = rd;
                     end
 
                     6'b010111: // SRL
                     begin
                         $display("Execute - SRL");
+                        executeOutput = rt_data >> sa;
+                        writebackReg = rd;
                     end
 
                     6'b011000: // ROTRV
                     begin
                         $display("Execute - ROTRV");
+                        temp32BitVal1 = rt_data >> rs_data[4:0];
+                        temp32BitVal2 = rt_data << (32 - rs_data[4:0]);
+                        executeOutput = temp32BitVal1 + temp32BitVal2;
+                        
+                        writebackReg = rd;
                     end
 
                     6'b011001: // SRLV
                     begin
                         $display("Execute - SRLV");
+                        executeOutput = rt_data >> rs_data;
+                        writebackReg = rd;
                     end
 
                     6'b011010: // SDBBP
@@ -285,51 +329,127 @@ begin
                     6'b011011: // SELEQZ
                     begin
                         $display("Execute - SELEQZ");
+                        if (rt_data == 32'b0)
+                        begin
+                            executeOutput = rs_data;
+                        end
+                        else
+                        begin
+                            executeOutput = 32'b0;
+                        end
+                        
+                        writebackReg = rd;
                     end
 
                     6'b011100: // SELNEZ
                     begin
                         $display("Execute - SELNEZ");
+                        if (rt_data != 32'b0)
+                        begin
+                            executeOutput = rs_data;
+                        end
+                        else
+                        begin
+                            executeOutput = 32'b0;
+                        end
+                        
+                        writebackReg = rd;
                     end
 
                     6'b011101: // SLLV
                     begin
                         $display("Execute - SLLV");
 
-                        memAccessEnable = 0;
-                        executeOutput = 0;
-                        writebackReg = 0;
+                        executeOutput = rt_data << rs_data[4:0]; // GPR[rt][31-s]->0 || 0^s
+                        writebackReg = rd;
                         
                     end
 
                     6'b011110: // SLT
                     begin
                         $display("Execute - SLT");
+                        if (rs_data < rt_data)
+                        begin
+                            executeOutput = 32'b1;
+                        end
+                        else
+                        begin
+                            executeOutput = 32'b0;
+                        end
+                        writebackReg = rd;
+                        
                     end
 
                     6'b011111: // SLTU
                     begin
                         $display("Execute - SLTU");
+                        if ($unsigned(rs_data) < $unsigned (rt_data))
+                        begin
+                            executeOutput = 32'b1;
+                        end
+                        else
+                        begin
+                            executeOutput = 32'b0;
+                        end
+                        writebackReg = rd;
+                        
                     end
 
                     6'b100000: // SRA
                     begin
                         $display("Execute - SRA");
+                        if (rt_data[31] == 1'b1)
+                        begin
+                            temp32BitVal1 = 32'hFFFF_FFFF;
+                        end
+                        else
+                        begin
+                            temp32BitVal1 = 32'b0;
+                        end
+                        
+                       executeOutput = (temp32BitVal1 << (32 - sa)) + (rt_data >> sa);
+                       writebackReg = rd;
+                       
                     end
 
                     6'b100001: // SRAV
                     begin
                         $display("Execute - SRAV");
+                        if (rt_data[31] == 1'b1)
+                        begin
+                            temp32BitVal1 = 32'hFFFF_FFFF;
+                        end
+                        else
+                        begin
+                            temp32BitVal1 = 32'b0;
+                        end
+                        
+                       executeOutput = (temp32BitVal1 << (32 - rs_data[4:0])) + (rt_data >> rs_data[4:0]);
+                       writebackReg = rd;
+                       
                     end
 
                     6'b100010: // SUB
                     begin
                         $display("Execute - SUB");
+                        temp32BitVal1 = rs_data - rt_data;
+                        temp33BitVal = rs_data - rt_data;
+                        if (temp32BitVal1 != temp33BitVal[31:0])
+                        begin
+                            // signal exception
+                        end
+                        else
+                        begin
+                            executeOutput = temp32BitVal1;
+                            writebackReg = rd;
+                        end
                     end
 
                     6'b100011: // SUBU
                     begin
                         $display("Execute - SUBU");
+                        executeOutput = rs_data - rt_data; // Unsigned is misnomer
+                        writebackReg = rd;
                     end
 
                     6'b100100: // SYNC
@@ -375,11 +495,15 @@ begin
                     6'b101100: // XOR
                     begin
                         $display("Execute - XOR");
+                        executeOutput = rs_data ^ rt_data;
+                        writebackReg = rd;
                     end
 
                     default: // OR
                     begin
-                    $display("Execute - OR");
+                        $display("Execute - OR");
+                        executeOutput = rs_data | rt_data;
+                        writebackReg = rd;
                     end
 
                 endcase
@@ -420,10 +544,18 @@ begin
                     6'b000011: // BLTZ
                     begin
                         $display("Execute - BLTZ");
+                        if (rs_data < $signed(32'b0))
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                        end
                     end
                     6'b000100: // NAL
                     begin
                         $display("Execute - NAL");
+                        executeOutput = program_counter + 8;
+                        writebackReg = 31;
                     end
                     default: // SYNCI
                     begin
@@ -474,6 +606,12 @@ begin
             6'b000101: // BNE
             begin
                 $display("Execute - BNE");
+                if (rs_data != rt_data)
+                begin
+                    program_counter_overwrite = program_counter + 4 + (offset << 2);
+                    overwritePcEnable = 1'b1;
+                    flush_decode = 1'b0;
+                end
             end
 
             6'b000110: // BGEUC, BGEZALC, BLEUC, BLEZ, BLEZALC
@@ -635,6 +773,15 @@ begin
                     6'b000000: // BOVC
                     begin
                         $display("Execute - BOVC");
+                        temp32BitVal1 = rs_data + rt_data;
+                        temp33BitVal = rs_data + rt_data;
+
+                        if (temp32BitVal1 != temp33BitVal[31:0])
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                        end
                     end
                     6'b000001: // BEQZALC
                     begin
@@ -679,8 +826,6 @@ begin
                 $display("Execute - ADDIU");
 
                 executeOutput = rs_data + immediate;
-
-                memAccessEnable = 0;
                 writebackReg = rt;
 
             end
@@ -1082,12 +1227,24 @@ begin
 
                     6'b001001: // SBE
                     begin
+                        // to update
                         $display("Execute - SBE");
+                        memAddr = offset + base_data; // vAddr
+                        // maybe later do vAddr -> pAddr translation
+
+                        accessLength = 0;
+                        memAccessEnable = 1;
+                        executeOutput = rt_data;
                     end
 
                     6'b001010: // SHE
                     begin
+                        // to update
                         $display("Execute - SHE");
+                        memAddr = offset + base_data;
+                        accessLength = 1;
+                        memAccessEnable = 1;
+                        executeOutput = rt_data;
                     end
 
                     6'b001011: // SCE
@@ -1102,32 +1259,47 @@ begin
 
                     6'b001101: // SWE
                     begin
+                        // to update
                         $display("Execute - SWE");
+                        memAddr = offset + base_data;
+                        accessLength = 2;
+                        memAccessEnable = 1;
+                        executeOutput = rt_data;
                     end
 
                     6'b001110: // BITSWAP
                     begin
                         $display("Execute - BITSWAP");
+                        executeOutput = bitswap(rt_data);
+                        writebackReg = rd;
                     end
 
                     6'b001111: // SEB
                     begin
                         $display("Execute - SEB");
+                        executeOutput = signExtend({24'b0,rt_data[7:0]},8);
+                        writebackReg = rd;
                     end
 
                     6'b010000: // SEH
                     begin
                         $display("Execute - SEH");
+                        executeOutput = signExtend({16'b0,rt_data[15:0]},16);
+                        writebackReg = rd;
                     end
 
                     6'b010001: // WSBH
                     begin
                         $display("Execute - WSBH");
+                        executeOutput = swapHalfWords(rt_data);
+                        writebackReg = rd;
                     end
 
                     6'b010010: // ALIGN
                     begin
                         $display("Execute - ALIGN");
+                        executeOutput = (rt_data << (8*bp)) | (rs_data >> (32 - 8*bp));
+                        writebackReg = rd;
                     end
 
 
@@ -1154,21 +1326,41 @@ begin
                     6'b010111: // LBUE
                     begin
                         $display("Execute - LBUE");
+                        // to update
+                        memAddr = offset + base_data;
+                        accessLength = 0;
+                        memAccessEnable = 2;
+                        memAccessUnsigned = 1;
+                        writebackReg = rt;
                     end
 
                     6'b011000: // LHUE
                     begin
-                        $display("Execute - LHUE");
+                        $display("Execute - LHUE");        
+                        accessLength = 1;
+                        memAccessEnable = 2;
+                        memAccessUnsigned = 1;
+                        writebackReg = rt;
                     end
 
                     6'b011001: // LBE
                     begin
                         $display("Execute - LBE");
+                        memAddr = offset + base_data;
+                        accessLength = 0;
+                        memAccessEnable = 2;
+                        memAccessUnsigned = 0;
+                        writebackReg = rt;
                     end
                     
                     6'b011010: // LHE
                     begin
                         $display("Execute - LHE");
+                        memAddr = offset + base_data;
+                        accessLength = 1;
+                        memAccessEnable = 2;
+                        memAccessUnsigned = 0;
+                        writebackReg = rt;
                     end
                     
                     6'b011011: // LLE
@@ -1184,6 +1376,11 @@ begin
                     6'b011101: // LWE
                     begin
                         $display("Execute - LWE");
+                        memAddr = offset + base_data;
+                        accessLength = 2;
+                        memAccessEnable = 2;
+                        memAccessUnsigned = 0;
+                        writebackReg = rt;
                     end
 
                     6'b011110: // PREF
@@ -1225,6 +1422,7 @@ begin
                 memAddr = offset + base_data;
                 accessLength = 0;
                 memAccessEnable = 2;
+                memAccessUnsigned = 0;
                 writebackReg = rt;
 
             end
@@ -1236,6 +1434,7 @@ begin
                 memAddr = offset + base_data;
                 accessLength = 1;
                 memAccessEnable = 2;
+                memAccessUnsigned = 0;
                 writebackReg = rt;
             end
 
@@ -1246,29 +1445,39 @@ begin
                 memAddr = offset + base_data;
                 accessLength = 2;
                 memAccessEnable = 2;
+                memAccessUnsigned = 0;
                 writebackReg = rt;
             end
 
             6'b100100: // LBU
             begin
                 $display("Execute - LBU");
+                memAddr = offset + base_data;
+                accessLength = 0;
+                memAccessEnable = 2;
+                memAccessUnsigned = 1;
+                writebackReg = rt;
             end
 
             6'b100101: // LHU
             begin
                 $display("Execute - LHU");
+                memAddr = offset + base_data;
+                accessLength = 1;
+                memAccessEnable = 2;
+                memAccessUnsigned = 1;
+                writebackReg = rt;
             end
 
             6'b101000: // SB
             begin
+                $display("Execute - SB");
                 memAddr = offset + base_data; // vAddr
                 // maybe later do vAddr -> pAddr translation
 
                 accessLength = 0;
                 memAccessEnable = 1;
                 executeOutput = rt_data;
-
-                $display("Execute - SB");
             end
 
             6'b101001: // SH
@@ -1279,7 +1488,6 @@ begin
                 accessLength = 1;
                 memAccessEnable = 1;
                 executeOutput = rt_data;
-                writebackReg = 0;
             end
 
             6'b101011: // SW
@@ -1290,7 +1498,6 @@ begin
                 accessLength = 2;
                 memAccessEnable = 1;
                 executeOutput = rt_data;
-                writebackReg = 0;
             end
 
             6'b110010: // BC
@@ -1348,21 +1555,33 @@ begin
                     6'b000000: // ADDIUPC
                     begin
                         $display("Execute - ADDIUPC");
+                        executeOutput = program_counter + (immediate << 2);
+                        writebackReg = rs;
                     end
 
                     6'b000001: // LWPC
                     begin
                         $display("Execute - LWPC");
+                        memAddr = program_counter + (offset << 2);
+                        accessLength = 2;
+                        memAccessEnable = 2;
+                        memAccessUnsigned = 0;
+                        writebackReg = rt;
+
                     end
 
                     6'b000010: // AUIPC
                     begin
                         $display("Execute - AUIPC");
+                        executeOutput = program_counter + (immediate << 16);
+                        writebackReg = rs;
                     end
 
                     default: // ALUIPC
                     begin;
                         $display("Execute - ALUIPC");
+                        executeOutput = (~32'h0000_FFFF) & (program_counter + (immediate << 16));
+                        writebackReg = rs;
                     end
                 endcase
             end

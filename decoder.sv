@@ -1,3 +1,5 @@
+`timescale 1 ns/ 10 ps // time unit / time precision
+
 `include "commonFunctions.sv"
 
 module decoder
@@ -35,7 +37,22 @@ output reg [1:0] i_type);
 
 initial
 begin
-
+    opcode = 6'b000000; // initialize the instruciton as NOP/SLL
+    instr_sel = 6'b001010; // initialize the instruction as NOP/SLL
+    rs = 5'b0;
+    rt = 5'b0;
+    rd = 5'b0;
+    sa = 5'b0;
+    code = 20'b0;
+    base = 5'b0;
+    offset = 32'b0;
+    instr_index = 26'b0;
+    immediate = 32'b0;
+    mc0_sel = 3'b0;
+    bp = 2'b0;
+    msdb = 5'b0;
+    lsb = 5'b0;
+    i_type = 2'b0;
 end
 
 always @(*)

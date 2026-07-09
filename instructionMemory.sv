@@ -1,3 +1,5 @@
+`timescale 1 ns/ 10 ps // time unit / time precision
+
 module instructionMemory
 #(parameter MEM_SIZE = 10) // mem_size will represent 2^N    
 (input wire clk,
@@ -17,9 +19,15 @@ reg [31:0] internal_addr_counter;
 //string instr_file;
 reg [1023:0] instr_file;
 
+reg [31:0] i;
+
 initial
 begin
-    integer i;
+
+    instr_write_out = 32'b0;
+    error_code = 4'b0;
+
+    // integer i;
     for (i = 0; i < 2**MEM_SIZE; i = i + 1)
     begin
         instr_mem[i] = 32'b0;
