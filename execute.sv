@@ -1058,6 +1058,18 @@ begin
                     default: // BLEZL
                     begin
                         $display("Execute - BLEZL");
+                        if (rs_data <= 32'b0)
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 4);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                        end
+                        else
+                        begin
+                            program_counter_overwrite = 32'b0;
+                            overwritePcEnable = 1'b0;
+                            flush_execute = 1'b0; // for some reason if the branch is NOT taken then the delay slot is not executed
+                        end
                     end
                 endcase
             end
@@ -1173,6 +1185,15 @@ begin
                     default: // BNVC
                     begin
                         $display("Execute - BNVC");
+                        temp32BitVal1 = rs_data + rt_data;
+                        temp33BitVal = rs_data + rt_data;
+
+                        if (temp32BitVal1 == temp33BitVal[31:0])
+                        begin
+                            program_counter_overwrite = program_counter + 4 + (offset << 2);
+                            overwritePcEnable = 1'b1;
+                            flush_decode = 1'b0;
+                        end
                     end
                 endcase
             end
@@ -1193,31 +1214,44 @@ begin
                     6'b000010: // CRC32B
                     begin
                         $display("Execute - CRC32B");
+                        executeOutput = CRC32(rt_data, rs_data, 1, 32'hEDB8_8320);
+                        writebackReg = rt;
+
                     end
 
                     6'b000011: // CRC32H
                     begin
                         $display("Execute - CRC32H");
+                        executeOutput = CRC32(rt_data, rs_data, 2, 32'hEDB8_8320);
+                        writebackReg = rt;
                     end
 
                     6'b000100: // CRC32W
                     begin
                         $display("Execute - CRC32W");
+                        executeOutput = CRC32(rt_data, rs_data, 4, 32'hEDB8_8320);
+                        writebackReg = rt;
                     end
 
                     6'b000101: // CRC32CB
                     begin
                         $display("Execute - CRC32CB");
+                        executeOutput = CRC32(rt_data, rs_data, 1, 32'h82F6_3B78);
+                        writebackReg = rt;
                     end
 
                     6'b000110: // CRC32CH
                     begin
                         $display("Execute - CRC32CH");
+                        executeOutput = CRC32(rt_data, rs_data, 2, 32'h82F6_3B78);
+                        writebackReg = rt;
                     end
 
                     6'b000111: // CRC32CW
                     begin
                         $display("Execute - CRC32CW");
+                        executeOutput = CRC32(rt_data, rs_data, 4, 32'h82F6_3B78);
+                        writebackReg = rt;
                     end
 
                     6'b001000: // CACHEE

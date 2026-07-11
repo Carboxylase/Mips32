@@ -88,5 +88,32 @@ function [31:0] swapHalfWords
 
 endfunction
 
+function [31:0] CRC32
+    (input [31:0] rt_data, [31:0] rs_data, [2:0]numBytes, [31:0] polynomial);
+    reg [31:0] temp;
+    reg [31:0] zeroPadding;
+    reg [31:0] index;
+    begin
+        temp = rt_data;
+        zeroPadding = 32'b0;
+
+        temp = temp ^ {zeroPadding & rs_data};
+
+        for (index = 0; index < numBytes*8 ; index = index + 1)
+        begin
+            if (temp[31] == 1'b1) // supposed to check the most significant coefficient
+            begin
+                temp = (temp >> 1) ^ polynomial;
+            end
+            else
+            begin
+                temp = (temp >> 1);
+            end
+        end 
+
+        CRC32 = temp;
+    end
+endfunction
+
 `endif
 

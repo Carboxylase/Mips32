@@ -14,7 +14,7 @@ module dataMemory
     output reg [31:0] readData    
 );
 
-reg [31:0] dmem [2**MEM_SIZE-1:0]; 
+reg [7:0] dmem [2**MEM_SIZE-1:0]; 
 
 // maybe make the write/read enable signal a 2 bit value
 // where do nothing = 0 or 3 , write = 1, read = 2
@@ -30,7 +30,7 @@ begin
     
     for (i = 0; i < 2**MEM_SIZE; i = i + 1)
     begin
-        dmem[i] = 32'b0;
+        dmem[i] = 8'b0;
     end
 end
 
@@ -40,17 +40,21 @@ begin
     begin
         if (accessLength == 0)
         begin
-            dmem[memAddr][7:0] <= writeData[7:0]; 
+            dmem[memAddr] <= writeData[7:0]; 
             $display("Mem Access - Writing byte %h to data memory address %h", writeData[7:0], memAddr);
         end
         else if (accessLength == 1)
         begin
-            dmem[memAddr][15:0] <= writeData[15:0];
+            dmem[memAddr] <= writeData[7:0];
+            dmem[memAddr + 1] <= writeData[15:8];
             $display("Mem Access - Writing halfword %h to data memory address %h", writeData[15:0], memAddr);
         end
         else
         begin
-            dmem[memAddr] <= writeData;
+            dmem[memAddr] <= writeData[7:0];
+            dmem[memAddr + 1] <= writeData[15:8];
+            dmem[memAddr + 2] <= writeData[23:16];
+            dmem[memAddr + 3] <= writeData[31:24];
             $display("Mem Access - Writing word %h to data memory address %h", writeData, memAddr);
         end
     end
@@ -60,46 +64,48 @@ begin
         begin
             if (memAccessUnsigned)
             begin
-                readData <= {24'b0, dmem[memAddr][7:0]};
-                $display("Mem Access - Reading byte %h from data memory address %h", dmem[memAddr][7:0], memAddr);
+                readData <= {24'b0, dmem[memAddr]};
+                $display("Mem Access - Reading byte %h from data memory address %h", {24'b0, dmem[memAddr]}, memAddr);
             end
             else
             begin
                 if (dmem[memAddr][7] == 1'b0)
                 begin
-                    readData <= {24'b0, dmem[memAddr][7:0]};
+                    readData <= {24'b0, dmem[memAddr]};
+                    $display("Mem Access - Reading byte %h from data memory address %h", {24'b0, dmem[memAddr]}, memAddr);
                 end
                 else
                 begin
-                    readData <= {24'b1, dmem[memAddr][7:0]};
+                    readData <= {24'b1, dmem[memAddr]};
+                    $display("Mem Access - Reading byte %h from data memory address %h", {24'b1, dmem[memAddr]}, memAddr);
                 end
-                $display("Mem Access - Reading byte %h from data memory address %h", dmem[memAddr][7:0], memAddr);
             end
         end
         else if (accessLength == 1)
         begin
             if (memAccessUnsigned)
             begin
-                readData <= {16'b0, dmem[memAddr][15:0]};
-                $display("Mem Access - Reading halfword %h from data memory address %h", dmem[memAddr][15:0], memAddr);
+                readData <= {16'b0,dmem[memAddr + 1], dmem[memAddr]};
+                $display("Mem Access - Reading halfword %h from data memory address %h", {16'b0,dmem[memAddr + 1], dmem[memAddr]}, memAddr);
             end
             else
             begin
-                if (dmem[memAddr][15] == 1'b0)
+                if (dmem[memAddr + 1][7] == 1'b0)
                 begin
-                    readData <= {16'b0, dmem[memAddr][15:0]};
+                    readData <= {16'b0, dmem[memAddr + 1], dmem[memAddr]};
+                    $display("Mem Access - Reading halfword %h from data memory address %h", {16'b0, dmem[memAddr + 1], dmem[memAddr]}, memAddr);
                 end
                 else
                 begin
-                    readData <= {16'b1, dmem[memAddr][15:0]};
+                    readData <= {16'b1, dmem[memAddr + 1], dmem[memAddr]};
+                    $display("Mem Access - Reading halfword %h from data memory address %h", {16'b1, dmem[memAddr + 1], dmem[memAddr]}, memAddr);
                 end
-                $display("Mem Access - Reading halfword %h from data memory address %h", dmem[memAddr][15:0], memAddr);
             end
         end
         else
         begin
-            readData <= dmem[memAddr];
-            $display("Mem Access - Reading word %h from data memory address %h", dmem[memAddr], memAddr);
+            readData <= {dmem[memAddr + 3], dmem[memAddr + 2], dmem[memAddr  +1], dmem[memAddr]};
+            $display("Mem Access - Reading word %h from data memory address %h", {dmem[memAddr + 3], dmem[memAddr + 2], dmem[memAddr  +1], dmem[memAddr]}, memAddr);
         end
     end
     else
