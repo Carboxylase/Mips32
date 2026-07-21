@@ -26,5 +26,5 @@ Test files are located in the Assembly and Binary directory. The Binary files th
 
 Inside the project directory, run:
 
-obj_dir/VtopModyle +instr_file=Binary/<Binary File Name>
+obj_dir/VtopModyle +instr_file=Binary/[Binary File Name]
 
