@@ -1,5 +1,5 @@
 module cache
-#(  parameter SET_SIZE_LEN = 4,
+#(  parameter SET_SIZE_LEN = 2,
     parameter NUM_SETS_LEN = 10)
 (   input wire [1:0] accessType,
     input wire [31:0] inData,
@@ -23,14 +23,17 @@ reg dirty [NUM_SETS_LEN-1:0][SET_SIZE_LEN-1:0];
 reg [SET_SIZE_LEN-1:0] setIndex;
 reg [NUM_SETS_LEN-1:0] groupIndex;
 
+reg [SET_SIZE_LEN-1:0] setIterator;
+
 initial
 begin
     setIndex = 0;
     groupIndex = 0;
+    setIterator = 0;
 
-    for (groupIndex = 0; groupIndex < NUM_SETS_LEN; groupIndex = groupIndex + 1)
+    for (groupIndex = 0; groupIndex < ~(NUM_SETS_LEN'b0); groupIndex = groupIndex + 1)
     begin
-        for (setIndex = 0; setIndex < NUM_SIZE_LEN; setIndex = setIndex + 1)
+        for (setIndex = 0; setIndex < ~(NUM_SIZE_LEN'b0); setIndex = setIndex + 1)
         begin
             cacheTag[groupIndex][setIndex] = 22'b0;
             cacheData[groupIndex][setIndex] = 32'b0;
@@ -44,7 +47,7 @@ end
 
 always @ (*)
 begin
-    if (accessType == 1'b00)
+    if (accessType == 1'b00) // do nothing
     begin
         tag = 21'b0;
         outData = 32'b0;
@@ -56,8 +59,36 @@ begin
         // using the offset to selection the set-associative block, see if there is any line with
         // no valid data and write there
         // if all data is valid, kick out the data that is the least used
-        for ()
-        
+        setIterator = SET_SIZE_LEN'b0;
+        foundInvalid = 1'b0;
+        leastUsed = SET_SIZE_LEN'b0;
+
+        for (setIndex = 0; setIndex <= ~(SET_SIZE_LEN'b0); setIndex = setIndex + 1)
+        begin
+            if (valid[vaOffset][setIterator] == 1'b0 && foundInvalid != 1'b1)
+            begin
+                cacheData[vaOffset][setIterator] = inData;
+                foundInvalid = 1'b1;
+            end
+            if (setIterator != SET_SIZE_LEN'b0)
+            begin
+                if (refCount[vaOffset][setIterator] < refcount[vaOffset][setIterator - 1])
+                begin
+                    leastUsed = refCount[vaOffset][setIterator];
+                end
+                else
+                begin
+                    leastUsed = refCount[vaOffset][setIterator - 1];
+                end
+            end
+
+            setIterator = setIterator + 1;
+        end
+
+        if (foundInvalid == 1'b0)
+        begin
+            cacheData[vaOffset][leastUsed] = inData;
+        end
     end
     else if ()
     begin

@@ -8,6 +8,312 @@ initial begin
     $dumpvars();
 end
 
+// ------------------------- CPU0 REGISTERS ----------------------------------
+/* verilator lint_off UNUSEDSIGNAL */
+reg [31:0] Index; //  ** (reg 0, sel 0) required for TLB
+reg [31:0] VPControl; // (reg 0, sel 4) required if multi-threading supported
+reg [31:0] Random; // ** (reg 1, sel 0) required for TLB
+reg [63:0] EntryLo0; // ** (reg 2, sel 0) required for TLB
+reg [63:0] EntryLo1; // ** (reg 3, sel 0) reqired for TLB
+reg [31:0] GlobalNumber; // (reg 3, sel 1) optional
+reg [31:0] Context; // ** (reg 4, sel 0) required for TLB
+reg [31:0] ContextConfig; // (reg 4, sel 1) optional
+reg [31:0] UserLocal; // ** (reg 4, sel 2) required, not interpreted by hardware
+reg [31:0] DebugContextId; // (reg 4, sel 4) optional
+reg [31:0] PageMask; // ** (reg 5, sel 0) required for TLB
+reg [31:0] PageGain; // ** (reg 5, sel 1) requird for 1kb pages
+reg [31:0] SegCtl0; // (reg 5, sel 2) optional
+reg [31:0] SegCtl1; // (reg 5, sel 3) optional
+reg [31:0] SegCtl2; // (reg 5, sel 4) optional
+reg [31:0] PWBase; // ** (reg 5, sel 5) required for Page Walking
+reg [31:0] PWField; // ** (reg 5, sel 6) requird for Page Walking
+reg [31:0] PWSize; // ** (reg 5, sel 7) requird for Page Walking
+reg [31:0] Wired; // ** (reg 6, sel 0) required for TLB
+reg [31:0] PWCtl; // ** (reg 6, sel 6) required for Page Walking
+reg [31:0] HWREna; // ** (reg 7, sel 0)
+reg [31:0] BadVAddr; // ** (reg 8, sel 0) required for TLB
+reg [31:0] BadInstr; // ** (reg 8, sel 1)
+reg [31:0] BadInstrP; // ** (reg 8, sel 2)
+reg [31:0] Count; // ** (reg 9, sel 0) required
+reg [31:0] EntryHi; // ** (reg 10, sel 0) required for TLB
+reg [31:0] Compare; // ** (reg 11, sel 0) required
+reg [31:0] Status; // ** (reg 12, sel 0) required
+reg [31:0] IntCtl; // ** (reg 12, sel 1)
+reg [31:0] SRSCtl; // ** (reg 12, sel 2)
+reg [31:0] SRSMap; // (reg 12, 3) required if shadow set and vectored interrupt mode is implemented
+reg [31:0] Cause; // ** (reg 13, sel 0)
+reg [31:0] NestedExc; // (reg 13, sel 5) optional
+reg [31:0] ExceptionPC; // ** (reg 14, sel 0)
+reg [31:0] NestedEPC; // (reg 14, sel 2) optional
+reg [31:0] ProcessorID; // ** (reg 15, sel 0)
+reg [31:0] EBase; // ** (reg 15, sel 1)
+reg [31:0] CDMMBase; // (reg 15, sel 2)
+reg [31:0] CMGCRBase; // (reg 15, sel 3)
+reg [31;0] BEVVa; // (reg 15, sel 4)
+reg [31:0] Configuration; // ** (reg 16, sel 0)
+reg [31:0] Configuration1; // ** (reg 16, sel 1)
+reg [31:0] Configuration2; // ** (reg 16, sel 2)
+reg [31:0] Configuration3; // ** (reg 16, sel 3)
+reg [31:0] Configuration4; // ** (reg 16, sel 4)
+reg [31:0] Configuration5; // ** (reg 16, sel 5)
+reg [31:0] LLAddress; // ** (reg 17, sel 0)
+reg [31:0] TagLo; // ** (reg 28, sel 0,2)
+reg [31:0] DataLo; // ** (reg 28 sel 1,3)
+reg [31:0] TagHi; // ** (reg 29, sel 0,2)
+reg [31:0] DataHi; // ** (reg29, sel 1,3)
+reg [31:0] ErrorEPC; // ** (reg 30, sel 0)
+
+/* verilator lint_on UNUSEDSIGNAL */
+
+reg [2:0] eout_cpu0_sel;
+reg [4:0] eout_cpu0_reg;
+
+initial
+begin
+    Index = 32'b0;
+    VPControl = 32'b0;
+    Random = 32'b0; 
+    EntryLo0 = 63'b0; 
+    EntryLo1  = 63'b0; 
+    GlobalNumber = 32'b0;
+    Context = 32'b0;
+    ContextConfig = 32'b0;
+    UserLocal = 32'b0;
+    DebugContextId = 32'b0;
+    PageMask = 32'b0;
+    PageGain = 32'b0;
+    SegCtl0 = 32'b0;
+    SegCtl1 = 32'b0;
+    SegCtl2 = 32'b0;
+    PWBase = 32'b0;
+    PWField = 32'b0;
+    PWSize = 32'b0;
+    Wired = 32'b0;
+    PWCtl = 32'b0;
+    HWREna = 32'b0;
+    BadVAddr = 32'b0;
+    BadInstr = 32'b0;
+    BadInstrP = 32'b0;
+    Count = 32'b0;
+    EntryHi = 32'b0;
+    Compare = 32'b0;
+    Status = 32'b0;
+    IntCtl = 32'b0;
+    SRSCtl = 32'b0;
+    SRSMap = 32'b0;
+    Cause = 32'b0;
+    NestedExc = 32'b0;
+    ExceptionPC = 32'b0;
+    NestedEPC = 32'b0;
+    ProcessorID = 32'b0;
+    EBase = 32'b0;
+    CDMMBase = 32'b0;
+    CMGCRBase = 32'b0;
+    BEVVa = 32'b0;
+    Configuration = 32'b0; 
+    Configuration1 = 32'b0;
+    Configuration2 = 32'b0;
+    Configuration3 = 32'b0;
+    Configuration4 = 32'b0;
+    Configuration5 = 32'b0;
+    LLAddress = 32'b0;
+    TagLo = 32'b0;
+    DataLo = 32'b0;
+    TagHi = 32'b0;
+    DataHi = 32'b0;
+    ErrorEPC = 32'b0;
+end
+
+
+
+always @(*)
+begin
+    case (eout_cpu0_reg)
+        0:
+        begin
+            case (sel)
+                0:
+                begin
+                    Index = eout_cpu0RegData;
+                end
+                
+                4:
+                begin
+                    VPControl = eout_cpu0RegData;
+                end
+
+                default:
+                begin
+                    ;
+                end
+            endcase
+        end
+
+        1:
+        begin
+            case (sel)
+                0:
+                begin
+                    Random = eout_cpu0RegData;
+                end
+
+                default:
+                begin
+                    ;
+                end
+            endcase
+        end
+
+        2:
+        begin
+            case (sel)
+                0:
+                begin
+                    EntryLo0 = eout_cpu0RegData;
+                end
+
+                default:
+                begin
+                    ;
+                end
+            endcase
+        end
+
+        3:
+        begin
+            case (sel)
+                0:
+                begin
+                    EntryLo1 = eout_cpu0RegData;
+                end
+
+                1:
+                begin
+                    GlobalNumber = eout_cpu0RegData
+                end
+
+                default:
+                begin
+
+                end
+            endcase
+        end
+
+        4:
+        begin
+            case (sel)
+
+            endcase
+        end
+        
+        5:
+        begin
+            case (sel)
+
+            endcase
+        end
+        
+        6:
+        begin
+            case (sel)
+
+            endcase
+        end
+        
+        7:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        8:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        9:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        10:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        11:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        12:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        13:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        14:
+        begin
+            case (sel)
+
+            endcase
+        end 
+
+        17:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        28:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        29:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        30:
+        begin
+            case (sel)
+
+            endcase
+        end
+
+        default:
+        begin
+            ;
+        end
+    endcase
+end
+
+
+// ------------------------------- END ----------------------------------------
+
 // ------------------------- instMem input -----------------------------------
 /* verilator lint_off UNUSEDSIGNAL */
 //string instr_file;
@@ -443,7 +749,7 @@ begin
         if (mw_p_writebackReg != 5'b0)
         begin
             regFile[mw_p_writebackReg] <= mw_p_executeOutput;
-            $display("Writeback: Writing %h to register %d from Data Mem", mw_p_executeOutput, mw_p_writebackReg);
+            $display("Writeback: Writing %h to register %d from Execute Stage", mw_p_executeOutput, mw_p_writebackReg);
         end
         else
         begin
