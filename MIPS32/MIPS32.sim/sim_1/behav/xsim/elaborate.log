@@ -6,21 +6,5 @@ Using 8 slave threads.
 WARNING: [XSIM 43-3431] One or more environment variables have been detected which affect the operation of the C compiler. These are typically not set in standard installations and are not tested by AMD, however they may be appropriate for your system, so the flow will attempt to continue.  If errors occur, try running xelab with the "-mt off -v 1" switches to see more information from the C compiler. The following environment variables have been detected:
 Starting static elaboration
 Pass Through NonSizing Optimizer
-Completed static elaboration
-Starting simulation data flow analysis
-WARNING: [XSIM 43-4099] "/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv" Line 1. Module topModule doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "/home/sn/Documents/VerilogProjects/MIPS32/instructionMemory.sv" Line 1. Module instructionMemory doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "/home/sn/Documents/VerilogProjects/MIPS32/decoder.sv" Line 3. Module decoder doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "/home/sn/Documents/VerilogProjects/MIPS32/execute.sv" Line 1. Module execute doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "/home/sn/Documents/VerilogProjects/MIPS32/dataMemory.sv" Line 1. Module dataMemory doesn't have a timescale but at least one module in design has a timescale.
-Completed simulation data flow analysis
-Time Resolution for simulation is 1ps
-Compiling package xil_defaultlib.$unit_dataMemory_sv_1571354042
-Compiling module xil_defaultlib.instructionMemory
-Compiling module xil_defaultlib.decoder
-Compiling module xil_defaultlib.execute
-Compiling module xil_defaultlib.dataMemory
-Compiling module xil_defaultlib.topModule
-Compiling module xil_defaultlib.tb
-Compiling module xil_defaultlib.glbl
-Built simulation snapshot tb_behav
+ERROR: [VRFC 10-3617] parameter 'instr_file' has no actual or default value [/home/sn/Documents/VerilogProjects/MIPS32/tb.sv:9]
+ERROR: [XSIM 43-3322] Static elaboration of top level Verilog design unit(s) in library work failed.

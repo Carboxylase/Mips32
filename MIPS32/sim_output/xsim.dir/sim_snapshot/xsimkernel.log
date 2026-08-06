@@ -1,7 +1,7 @@
-Running: xsim.dir/sim_snapshot/xsimk -simmode gui -testplusarg instr_file=../../Binary/Addiu_Binary.txt -wdb sim_snapshot.wdb -simrunnum 0 -socket 55237
+Running: xsim.dir/sim_snapshot/xsimk -simmode gui -wdb sim_snapshot.wdb -simrunnum 0 -socket 35455
 Design successfully loaded
-Design Loading Memory Usage: 198088 KB (Peak: 198088 KB)
-Design Loading CPU Usage: 1110 ms
+Design Loading Memory Usage: 198180 KB (Peak: 198180 KB)
+Design Loading CPU Usage: 780 ms
 Simulation completed
-Simulation Memory Usage: 285076 KB (Peak: 337356 KB)
-Simulation CPU Usage: 1200 ms
+Simulation Memory Usage: 285168 KB (Peak: 337448 KB)
+Simulation CPU Usage: 790 ms

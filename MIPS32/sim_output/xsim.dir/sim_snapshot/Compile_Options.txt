@@ -1,1 +1,1 @@
--debug "typical" -top "tb" -snapshot "sim_snapshot" 
+-debug "typical" -top "tb" -generic_top "instr_file=../../Binary/Addiu_Binary.mem" -snapshot "sim_snapshot" 

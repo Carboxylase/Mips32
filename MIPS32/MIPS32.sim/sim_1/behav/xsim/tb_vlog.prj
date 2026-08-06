@@ -1,10 +1,12 @@
 # compile verilog/system verilog design source files
-sv xil_defaultlib  --include "../../../../../../../../Xilinx/2025.2/data/rsb/busdef" \
-"../../../../../dataMemory.sv" \
-"../../../../../decoder.sv" \
-"../../../../../execute.sv" \
-"../../../../../instructionMemory.sv" \
-"../../../../../topModule.sv" \
+verilog xil_defaultlib  -i "../../../../../" --include "../../../../../../../../Xilinx/2025.2/data/rsb/busdef" \
+"../../../../../dataMemory.v" \
+"../../../../../decoder.v" \
+"../../../../../execute.v" \
+"../../../../../instructionMemory.v" \
+"../../../../../topModule.v" \
+
+sv xil_defaultlib  -i "../../../../../" --include "../../../../../../../../Xilinx/2025.2/data/rsb/busdef" \
 "../../../../../tb.sv" \
 
 # compile glbl module

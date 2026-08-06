@@ -6,8 +6,13 @@ localparam CLK_PERIOD = 2;
 
 reg clk = 1'b0;
 
-topModule top(
-    .clk(clk)
+parameter string instr_file;
+
+reg [7:0] lowerRegBits;
+
+topModule #(.instr_file(instr_file)) top(
+    .clk(clk),
+    .lowerRegBits(lowerRegBits)
 );
 
 

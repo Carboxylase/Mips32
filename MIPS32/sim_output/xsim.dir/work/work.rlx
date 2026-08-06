@@ -2,10 +2,10 @@
 2020.2
 Nov 14 2025
 12:36:23
-/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.sv,1782875207,systemVerilog,,,,$unit_commonFunctions_sv,,,,,,,,
-/home/sn/Documents/VerilogProjects/MIPS32/dataMemory.sv,1783033833,systemVerilog,,,,dataMemory,,,,,,,,
-/home/sn/Documents/VerilogProjects/MIPS32/decoder.sv,1783033254,systemVerilog,,,/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.sv,$unit_decoder_sv;decoder,,,,,,,,
-/home/sn/Documents/VerilogProjects/MIPS32/execute.sv,1783029654,systemVerilog,,,/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.sv,$unit_execute_sv;execute,,,,,,,,
-/home/sn/Documents/VerilogProjects/MIPS32/instructionMemory.sv,1783033915,systemVerilog,,,,instructionMemory,,,,,,,,
-/home/sn/Documents/VerilogProjects/MIPS32/tb.sv,1783046335,systemVerilog,,,,tb,,,,,,,,
-/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv,1783034808,systemVerilog,,,,topModule,,,,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.vh,1785464918,verilog,,,,,,,,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/dataMemory.v,1785464906,verilog,,,/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.vh,dataMemory,,,../../commonFunctions.vh,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/decoder.v,1785464896,verilog,,,/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.vh,decoder,,,../../commonFunctions.vh,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/execute.v,1785464901,verilog,,,/home/sn/Documents/VerilogProjects/MIPS32/commonFunctions.vh,execute,,,../../commonFunctions.vh,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/instructionMemory.v,1785367061,verilog,,,,instructionMemory,,,,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/tb.sv,1785401486,systemVerilog,,,,tb,,,,,,,,
+/home/sn/Documents/VerilogProjects/MIPS32/topModule.v,1785402064,verilog,,,,topModule,,,,,,,,

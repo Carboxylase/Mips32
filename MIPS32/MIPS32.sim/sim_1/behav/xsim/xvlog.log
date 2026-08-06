@@ -1,68 +1,14 @@
-INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/sn/Documents/VerilogProjects/MIPS32/dataMemory.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/sn/Documents/VerilogProjects/MIPS32/dataMemory.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module dataMemory
-INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/sn/Documents/VerilogProjects/MIPS32/decoder.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/sn/Documents/VerilogProjects/MIPS32/decoder.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module decoder
-INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/sn/Documents/VerilogProjects/MIPS32/execute.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/sn/Documents/VerilogProjects/MIPS32/execute.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module execute
-INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/sn/Documents/VerilogProjects/MIPS32/instructionMemory.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/sn/Documents/VerilogProjects/MIPS32/instructionMemory.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module instructionMemory
-INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/sn/Documents/VerilogProjects/MIPS32/topModule.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module topModule
-WARNING: [VRFC 10-2938] 'fd_instr_fetched' is already implicitly declared on line 67 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:70]
-WARNING: [VRFC 10-2938] 'de_opcode' is already implicitly declared on line 88 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:105]
-WARNING: [VRFC 10-2938] 'de_instr_sel' is already implicitly declared on line 89 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:106]
-WARNING: [VRFC 10-2938] 'de_rs' is already implicitly declared on line 90 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:107]
-WARNING: [VRFC 10-2938] 'de_rt' is already implicitly declared on line 91 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:108]
-WARNING: [VRFC 10-2938] 'de_rd' is already implicitly declared on line 92 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:109]
-WARNING: [VRFC 10-2938] 'de_sa' is already implicitly declared on line 93 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:110]
-WARNING: [VRFC 10-2938] 'de_code' is already implicitly declared on line 94 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:111]
-WARNING: [VRFC 10-2938] 'de_base' is already implicitly declared on line 95 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:112]
-WARNING: [VRFC 10-2938] 'de_offset' is already implicitly declared on line 96 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:113]
-WARNING: [VRFC 10-2938] 'de_instr_index' is already implicitly declared on line 97 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:114]
-WARNING: [VRFC 10-2938] 'de_immediate' is already implicitly declared on line 98 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:115]
-WARNING: [VRFC 10-2938] 'de_mc0_sel' is already implicitly declared on line 99 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:116]
-WARNING: [VRFC 10-2938] 'de_bp' is already implicitly declared on line 100 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:117]
-WARNING: [VRFC 10-2938] 'de_msdb' is already implicitly declared on line 101 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:118]
-WARNING: [VRFC 10-2938] 'de_lsb' is already implicitly declared on line 102 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:119]
-WARNING: [VRFC 10-2938] 'de_i_type' is already implicitly declared on line 103 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:120]
-WARNING: [VRFC 10-2938] 'em_memAccessEnable' is already implicitly declared on line 312 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:322]
-WARNING: [VRFC 10-2938] 'em_memAddr' is already implicitly declared on line 313 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:323]
-WARNING: [VRFC 10-2938] 'em_accessLength' is already implicitly declared on line 314 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:324]
-WARNING: [VRFC 10-2938] 'em_executeOutput' is already implicitly declared on line 315 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:325]
-WARNING: [VRFC 10-2938] 'em_writebackReg' is already implicitly declared on line 316 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:326]
-WARNING: [VRFC 10-2938] 'ef_program_counter_overwrite' is already implicitly declared on line 317 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:328]
-WARNING: [VRFC 10-2938] 'ef_overwritePcEnable' is already implicitly declared on line 318 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:329]
-WARNING: [VRFC 10-2938] 'eout_flush_decode' is already implicitly declared on line 319 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:331]
-WARNING: [VRFC 10-2938] 'eout_flush_execute' is already implicitly declared on line 320 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:332]
-WARNING: [VRFC 10-2938] 'mw_readData' is already implicitly declared on line 358 [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:360]
-WARNING: [VRFC 10-3380] identifier 'ef_overwritePcEnable' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:26]
-WARNING: [VRFC 10-3380] identifier 'ef_program_counter_overwrite' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:28]
-WARNING: [VRFC 10-3380] identifier 'eout_flush_decode' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:81]
-WARNING: [VRFC 10-3380] identifier 'em_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:148]
-WARNING: [VRFC 10-3380] identifier 'em_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:150]
-WARNING: [VRFC 10-3380] identifier 'em_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:152]
-WARNING: [VRFC 10-3380] identifier 'em_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:154]
-WARNING: [VRFC 10-3380] identifier 'mw_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:156]
-WARNING: [VRFC 10-3380] identifier 'mw_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:158]
-WARNING: [VRFC 10-3380] identifier 'em_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:168]
-WARNING: [VRFC 10-3380] identifier 'em_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:170]
-WARNING: [VRFC 10-3380] identifier 'em_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:172]
-WARNING: [VRFC 10-3380] identifier 'em_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:174]
-WARNING: [VRFC 10-3380] identifier 'mw_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:176]
-WARNING: [VRFC 10-3380] identifier 'mw_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:178]
-WARNING: [VRFC 10-3380] identifier 'em_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:188]
-WARNING: [VRFC 10-3380] identifier 'em_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:190]
-WARNING: [VRFC 10-3380] identifier 'em_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:192]
-WARNING: [VRFC 10-3380] identifier 'em_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:194]
-WARNING: [VRFC 10-3380] identifier 'mw_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:196]
-WARNING: [VRFC 10-3380] identifier 'mw_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:198]
-WARNING: [VRFC 10-3380] identifier 'em_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:208]
-WARNING: [VRFC 10-3380] identifier 'em_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:210]
-WARNING: [VRFC 10-3380] identifier 'em_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:212]
-WARNING: [VRFC 10-3380] identifier 'em_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:214]
-WARNING: [VRFC 10-3380] identifier 'mw_p_writebackReg' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:216]
-WARNING: [VRFC 10-3380] identifier 'mw_p_executeOutput' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:218]
-WARNING: [VRFC 10-3380] identifier 'eout_flush_execute' is used before its declaration [/home/sn/Documents/VerilogProjects/MIPS32/topModule.sv:281]
 INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/sn/Documents/VerilogProjects/MIPS32/tb.sv" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module tb
-WARNING: [VRFC 10-1771] potential always loop found [/home/sn/Documents/VerilogProjects/MIPS32/tb.sv:14]
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/sn/Documents/VerilogProjects/MIPS32/MIPS32/MIPS32.sim/sim_1/behav/xsim/glbl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module glbl
