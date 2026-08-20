@@ -1,6 +1,6 @@
-verilator --binary -j 0 -Wall --top-module topModule topModule.sv
+verilator --binary -j 0 -I ./commonFunctions.vh -Wall --top-module topModule topModule.v
 
-verilator --trace --cc -exe -Wall testbench.cpp topModule.sv 
+verilator --trace --cc -exe -Wall testbench.cpp topModule.v -Ginstr_file="\"$1\""
 
 cat >> obj_dir/VtopModule.mk <<'EOF'
 

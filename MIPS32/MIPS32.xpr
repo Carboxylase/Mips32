@@ -140,7 +140,7 @@
         <Option Name="TopModule" Val="topModule"/>
         <Option Name="TopAutoSet" Val="TRUE"/>
         <Option Name="VerilogDir" Val="$PPRDIR/../../MIPS32"/>
-        <Generic Name="instr_file" Val="../Binary/Addiu_Binary.mem"/>
+        <Generic Name="instr_file" Val="../Binary/Mul_Muh_Binary.txt"/>
       </Config>
     </FileSet>
     <FileSet Name="constrs_1" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1" RelGenDir="$PGENDIR/constrs_1">

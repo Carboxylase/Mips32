@@ -1,5 +1,7 @@
 `timescale 1 ns/ 10 ps // time unit / time precision
 
+`include "commonFunctions.vh"
+
 module execute
 (
 /* verilator lint_off UNUSEDSIGNAL */
@@ -24,6 +26,10 @@ input wire [4:0] msdb,
 input wire [4:0] lsb,
 input wire [1:0] i_type,
 input wire [31:0] program_counter,
+input wire [31:0] mulDivNumItIn,
+input wire [63:0] mulDivResultIn,
+input wire [64:0] boothOpIn,
+input wire [5:0] boothNIn,
 output reg [1:0] memAccessEnable,
 output reg [31:0] memAddr,
 output reg [1:0] accessLength,
@@ -33,11 +39,14 @@ output reg [4:0] writebackReg,
 output reg [31:0] program_counter_overwrite,
 output reg overwritePcEnable,
 output reg flush_decode,
-output reg flush_execute
+output reg flush_execute,
+output reg stall,
+output reg [31:0] mulDivNumItOut,
+output reg [63:0] mulDivResultOut,
+output reg [64:0] boothOpOut,
+output reg [5:0] boothNOut
 /* verilator lint_off UNUSEDSIGNAL */
 );
-
-`include "commonFunctions.vh"
 
 // register descriptions
 // opcode is the bits [31:26] of the fethed instruction
@@ -57,6 +66,11 @@ output reg flush_execute
 reg signed [31:0] temp32BitVal1; // a temporary value for computations
 reg signed [31:0] temp32BitVal2;
 reg signed [32:0] temp33BitVal;
+reg signed [63:0] mulDivResultTemp;
+reg signed [31:0] mulDivMaxIt;
+reg signed [31:0] mulDivIterator;
+reg signed [64:0] boothOpTemp;
+// reg signed [31:0] mulDivNumIt;
 
 initial
 begin
@@ -70,10 +84,22 @@ begin
     overwritePcEnable = 1'b0;
     flush_decode = 1'b1;
     flush_execute = 1'b1;
+    stall = 1'b0;
+    mulDivNumItOut = 32'b0;
+    mulDivResultOut = 64'b0;
+    boothOpOut = 65'b0;
+    boothNOut = 6'b0;
 
     temp32BitVal1 = 32'b0;
     temp32BitVal2 = 32'b0;
     temp33BitVal = 33'b0;
+    boothOpTemp = 65'b0;
+
+    mulDivResultTemp = 64'b0;
+    mulDivMaxIt = 32'b0;
+    mulDivIterator = 32'b0;
+    
+    // mulDivNumIt = 32'b0;
 end
 
 always @(*)
@@ -90,6 +116,21 @@ begin
         overwritePcEnable = 1'b0;
         flush_decode = 1'b1; // reset the rst signal 
         flush_execute = 1'b1; // reset the rst signal 
+        stall = 1'b0;
+        mulDivNumItOut = 32'b0;
+        mulDivResultOut = 64'b0;
+        boothOpOut = 65'b0;
+        boothNOut = 6'b0;
+
+        temp32BitVal1 = 32'b0;
+        temp32BitVal2 = 32'b0;
+        temp33BitVal = 33'b0;
+        boothOpTemp = 65'b0;
+
+        mulDivResultTemp = 64'b0;
+        mulDivMaxIt = 32'b0;
+        mulDivIterator = 32'b0;
+        
     end
     else
     begin
@@ -104,6 +145,17 @@ begin
         flush_decode = 1'b1; // reset the rst signal
         flush_execute = 1'b1; // reset the rst signal 
         // ------------------------------------------------
+        stall = 1'b0;
+        mulDivNumItOut = 32'b0;
+        mulDivResultOut = 64'b0;
+
+        temp32BitVal1 = 32'b0;
+        temp32BitVal2 = 32'b0;
+        temp33BitVal = 33'b0;
+        mulDivResultTemp = 64'b0;
+        mulDivMaxIt = 32'b0;
+        mulDivIterator = 32'b0;
+
         case(opcode)
             6'b000000: 
             begin
@@ -156,33 +208,37 @@ begin
                         writebackReg = rd;
                     end
 
-                    6'b000110: // DIV
-                    begin
-                        $display("Execute - DIV");
-                        executeOutput = rs_data / rt_data;
-                        writebackReg = rd;
-                    end
+// ----- BELOW IS PROBLEM -----
+
+                    // 6'b000110: // DIV
+                    // begin
+                    //     $display("Execute - DIV");
+                    //     executeOutput = rs_data / rt_data;
+                    //     writebackReg = rd;
+                    // end
                                 
-                    6'b000111: // MOD
-                    begin
-                        $display("Execute - MOD");
-                        executeOutput = rs_data % rt_data;
-                        writebackReg = rd;
-                    end
+                    // 6'b000111: // MOD
+                    // begin
+                    //     $display("Execute - MOD");
+                    //     executeOutput = rs_data % rt_data;
+                    //     writebackReg = rd;
+                    // end
 
-                    6'b001000: // DIVU
-                    begin
-                        $display("Execute - DIVU");
-                        executeOutput = $unsigned(rs_data) / $unsigned(rt_data);
-                        writebackReg = rd;
-                    end
+                    // 6'b001000: // DIVU
+                    // begin
+                    //     $display("Execute - DIVU");
+                    //     executeOutput = $unsigned(rs_data) / $unsigned(rt_data);
+                    //     writebackReg = rd;
+                    // end
 
-                    6'b001001: // MODU
-                    begin
-                        $display("Execute - MODU");
-                        executeOutput = $unsigned(rs_data) / $unsigned(rt_data);
-                        writebackReg = rd;
-                    end
+                    // 6'b001001: // MODU
+                    // begin
+                    //     $display("Execute - MODU");
+                    //     executeOutput = $unsigned(rs_data) / $unsigned(rt_data);
+                    //     writebackReg = rd;
+                    // end
+
+// ----- ABOVE IS PROBLEM
 
                     6'b001010: //PAUSE
                     begin
@@ -256,30 +312,92 @@ begin
                     6'b010001: // MUL
                     begin
                         $display("Execute - MUL");
-//                        executeOutput = rs_data * rt_data;
-//                        writebackReg = rd;
+
+                        boothOpTemp = boothOpIn;
+                        
+                        if (boothOpIn[1] == 1'b1 && boothOpIn[0] == 1'b0)
+                        begin
+                            boothOpTemp[64:33] = boothOpIn[64:33] - rs_data;
+                            boothOpOut = boothOpTemp >>> 1;
+                            boothNOut = boothNIn - 1;
+                        end
+                        else if (boothOpIn[1] == 1'b0 && boothOpIn[0] == 1'b1)
+                        begin
+                            boothOpTemp[64:33] = boothOpIn[64:33] + rs_data;
+                            boothOpOut = boothOpTemp >>> 1;
+                            boothNOut = boothNIn - 1;
+                        end
+                        else
+                        begin
+                            boothOpOut = boothOpTemp >>> 1;
+                            boothNOut = boothNIn - 1;
+                        end
+
+                        if (boothNOut == 6'b0)
+                        begin
+                            executeOutput = boothOpOut[32:1];
+                            writebackReg = rd;
+                            boothOpOut = 65'b0;
+                            stall = 1'b0;
+                        end
+                        else
+                        begin
+                            stall = 1'b1;
+                        end
+
                     end
 
                     6'b010010: // MUH
                     begin
                         $display("Execute - MUH");
-                        executeOutput = rs_data * rt_data;
-                        writebackReg = rd;
+
+                        boothOpTemp = boothOpIn;
+                        
+                        if (boothOpIn[1] == 1'b1 && boothOpIn[0] == 1'b0)
+                        begin
+                            boothOpTemp[64:33] = boothOpIn[64:33] - rs_data;
+                            boothOpOut = boothOpTemp >>> 1;
+                            boothNOut = boothNIn - 1;
+                        end
+                        else if (boothOpIn[1] == 1'b0 && boothOpIn[0] == 1'b1)
+                        begin
+                            boothOpTemp[64:33] = boothOpIn[64:33] + rs_data;
+                            boothOpOut = boothOpTemp >>> 1;
+                            boothNOut = boothNIn - 1;
+                        end
+                        else
+                        begin
+                            boothOpOut = boothOpTemp >>> 1;
+                            boothNOut = boothNIn - 1;
+                        end
+
+                        if (boothNOut == 6'b0)
+                        begin
+                            executeOutput = boothOpOut[64:33];
+                            writebackReg = rd;
+                            boothOpOut = 65'b0;
+                            stall = 1'b0;
+                        end
+                        else
+                        begin
+                            stall = 1'b1;
+                        end
+                        
                     end
 
-                    6'b010011: // MULU
-                    begin
-                        $display("Execute - MULU");
-                        executeOutput = $unsigned(rs_data) * $unsigned(rt_data);
-                        writebackReg = rd;
-                    end
+//                     6'b010011: // MULU
+//                     begin
+//                         $display("Execute - MULU");
+//                         executeOutput = $unsigned(rs_data) * $unsigned(rt_data);
+//                         writebackReg = rd;
+//                     end
 
-                    6'b010100: // MUHU
-                    begin
-                        $display("Execute - MUHU");
-                        executeOutput = $unsigned(rs_data) * $unsigned(rt_data);
-                        writebackReg = rd;
-                    end
+//                     6'b010100: // MUHU
+//                     begin
+//                         $display("Execute - MUHU");
+//                         executeOutput = $unsigned(rs_data) * $unsigned(rt_data);
+//                         writebackReg = rd;
+//                     end
 
                     6'b010101: // NOR
                     begin
@@ -509,6 +627,8 @@ begin
 
                 endcase
             end
+
+// ----- ^^ PROBLEM -----
 
             6'b000001:
             begin
@@ -883,7 +1003,7 @@ begin
             6'b001111: // AUI, LUI - LUI is an assembly idiom of AUI where rs = 0
             begin
                 $display("Execute - AUI");
-                executeOutput = rs_data + immediate << 16;
+                executeOutput = rs_data + (immediate << 16);
                 writebackReg = rt;
             end
 

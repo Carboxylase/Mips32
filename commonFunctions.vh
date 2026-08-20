@@ -16,6 +16,22 @@ function [31:0] signExtend
     end
 endfunction
 
+function [63:0] signExtend64
+    (input [31:0] originalBits, [6:0] originalLen);
+    reg signBit;
+    reg [63:0] flip; // max value 32 bit
+    begin
+        flip = 64'hFFFF_FFFF_FFFF_FFFF;
+
+        signBit = originalBits[originalLen-1];
+
+        flip = flip << originalLen;
+
+        signExtend64 = (flip & {64{signBit}})| {32'b0, originalBits};
+
+    end
+endfunction
+
 function signed [31:0] countLeadingOnes
     (input [31:0] rs_data);
     reg signed [31:0] temp;
@@ -115,5 +131,20 @@ function [31:0] CRC32
     end
 endfunction
 
+function [31:0] mult
+    (input [31:0] rs_data, [31:0] rt_data);
+    reg [31:0] temp;
+    reg [31:0] iterator;
+    begin
+        temp = 32'b0;
+
+        for (iterator = 32'b0; iterator < rt_data; iterator = iterator + 1)
+        begin
+            temp = temp + rs_data;
+        end
+
+        mult = temp;
+    end
+endfunction
 `endif
 

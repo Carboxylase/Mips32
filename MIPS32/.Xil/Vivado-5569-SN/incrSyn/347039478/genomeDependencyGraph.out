@@ -1,0 +1,23 @@
+INST topModule__GC0 PIN 42: GENOME topModule__GC0 PIN 42
+INST topModule__GC0 PIN 43: GENOME topModule__GC0 PIN 43
+INST topModule__GC0 PIN 44: GENOME topModule__GC0 PIN 44
+INST topModule__GC0 PIN 45: GENOME topModule__GC0 PIN 45
+INST topModule__GC0 PIN 46: GENOME topModule__GC0 PIN 46
+INST topModule__GC0 PIN 47: GENOME topModule__GC0 PIN 47
+INST topModule__GC0 PIN 48: GENOME topModule__GC0 PIN 48
+INST topModule__GC0 PIN 49: GENOME topModule__GC0 PIN 49
+INST topModule__GC0 PIN 50: GENOME topModule__GC0 PIN 50
+INST topModule__GC0 PIN 51: GENOME topModule__GC0 PIN 51
+INST topModule__GC0 PIN 52: GENOME topModule__GC0 PIN 52
+INST topModule__GC0 PIN 53: GENOME topModule__GC0 PIN 53
+INST topModule__GC0 PIN 54: GENOME topModule__GC0 PIN 54
+INST topModule__GC0 PIN 55: GENOME topModule__GC0 PIN 55
+INST topModule__GC0 PIN 56: GENOME topModule__GC0 PIN 56
+INST topModule__GC0 PIN 57: GENOME topModule__GC0 PIN 57
+INST topModule__GC0 PIN 58: GENOME topModule__GC0 PIN 58
+INST topModule__GC0 PIN 59: GENOME topModule__GC0 PIN 59
+INST topModule__GC0 PIN 60: GENOME topModule__GC0 PIN 60
+INST topModule__GC0 PIN 61: GENOME topModule__GC0 PIN 61
+INST topModule__GC0 PIN 62: GENOME topModule__GC0 PIN 62
+INST topModule__GC0 PIN 63: GENOME topModule__GC0 PIN 63
+DISSOLVE_GENOME: GENOME dataMemory__GB0 GENOME dataMemory__GB1 GENOME dataMemory__GB2 GENOME dataMemory__GB3 GENOME dataMemory__GB4 GENOME dataMemory__GB5 GENOME dataMemory__GB6 GENOME topModule__GC0

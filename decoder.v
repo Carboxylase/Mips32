@@ -1,5 +1,7 @@
 `timescale 1 ns/ 10 ps // time unit / time precision
 
+`include "commonFunctions.vh"
+
 module decoder
 (
 input wire rst,
@@ -21,8 +23,6 @@ output reg [4:0] msdb,
 output reg [4:0] lsb,
 output reg [1:0] i_type);
 
-`include "commonFunctions.vh"
-
 // register descriptions
 // opcode is the bits [31:26] of the fethed instruction
 // instr_sel will be used as a secondary flag (after the opcode) to tell what the execute module needs to do
@@ -38,7 +38,7 @@ output reg [1:0] i_type);
 initial
 begin
     opcode = 6'b000000; // initialize the instruciton as NOP/SLL
-    instr_sel = 6'b001010; // initialize the instruction as NOP/SLL
+    instr_sel = 6'b001011; // initialize the instruction as NOP/SLL
     rs = 5'b0;
     rt = 5'b0;
     rd = 5'b0;
