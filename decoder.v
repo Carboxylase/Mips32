@@ -1,6 +1,6 @@
 `timescale 1 ns/ 10 ps // time unit / time precision
 
-`include "commonFunctions.vh"
+// `include "commonFunctions.vh"
 
 module decoder
 (
@@ -22,6 +22,8 @@ output reg [1:0] bp,
 output reg [4:0] msdb,
 output reg [4:0] lsb,
 output reg [1:0] i_type);
+
+`include "commonFunctions.vh"
 
 // register descriptions
 // opcode is the bits [31:26] of the fethed instruction

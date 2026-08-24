@@ -1,6 +1,6 @@
 `timescale 1 ns/ 10 ps // time unit / time precision
 
-`include "commonFunctions.vh"
+// `include "commonFunctions.vh"
 
 module execute
 (
@@ -47,6 +47,8 @@ output reg [64:0] boothOpOut,
 output reg [5:0] boothNOut
 /* verilator lint_off UNUSEDSIGNAL */
 );
+
+`include "commonFunctions.vh"
 
 // register descriptions
 // opcode is the bits [31:26] of the fethed instruction

@@ -3,7 +3,9 @@
 module topModule
 #(parameter instr_file = "test.txt")
 (input wire clk,
-output reg [7:0] lowerRegBits);
+input wire [4:0] regAccessIndex,
+input wire [1:0] byteNum,
+output reg [7:0] eightBits);
 
 initial begin
     $dumpfile("testbench.vcd");
@@ -30,6 +32,7 @@ begin
 end
 
 wire ef_overwritePcEnable;
+wire [31:0] ef_program_counter_overwrite;
 wire eout_stall;
 reg df_stall;
 
@@ -395,15 +398,7 @@ end
 //          de_instr_sel == 6'b010100))
 
 //     begin
-//         if ((eout_stall == 1'b0))
-//         begin
-//             df_stall = 1'b1;
-//         end
-//         else
-//         begin
-//             df_stall = 1'b0;
-//         end
-//     end
+
 //     else
 //     begin
 //         df_stall = 1'b0;
@@ -522,7 +517,6 @@ wire [31:0] em_memAddr;
 wire [1:0] em_accessLength;
 wire em_memAccessUnsigned;
 
-wire [31:0] ef_program_counter_overwrite;
 // the rest of the execute output are above the modules that require the output as input
 
 
@@ -639,7 +633,7 @@ begin
         else
         begin
             $display("Writeback: Attempting to write to ZERO Reg - Blocked");
-            lowerRegBits <= mw_readData[7:0];
+            // eightBits <= mw_readData[7:0];
         end
     end
     else // write from executed stage value to reg
@@ -652,9 +646,30 @@ begin
         else
         begin
             $display("Writeback: Attempting to write to ZERO Reg - Blocked");
-            lowerRegBits <= mw_p_executeOutput[7:0];
+            // eightBits <= mw_p_executeOutput[7:0];
         end
     end
+end
+
+always @ (*)
+begin
+    if (byteNum == 2'b0)
+    begin
+        eightBits = regFile[regAccessIndex][7:0];
+    end
+    else if (byteNum == 2'b01)
+    begin
+        eightBits = regFile[regAccessIndex][15:8];
+    end
+    else if (byteNum == 2'b10)
+    begin
+        eightBits = regFile[regAccessIndex][23:16];
+    end
+    else
+    begin
+        eightBits = regFile[regAccessIndex][31:24];
+    end
+
 end
                             
 endmodule

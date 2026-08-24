@@ -1,6 +1,6 @@
 `timescale 1 ns/ 10 ps // time unit / time precision
 
-`include "commonFunctions.vh"
+// `include "commonFunctions.vh"
 
 module dataMemory
 #(parameter MEM_SIZE = 10)
@@ -13,6 +13,8 @@ module dataMemory
     input wire memAccessUnsigned,
     output reg [31:0] readData    
 );
+
+`include "commonFunctions.vh"
 
 reg [7:0] dmem [2**MEM_SIZE-1:0]; 
 
