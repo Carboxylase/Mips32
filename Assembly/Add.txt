@@ -1,1 +1,3 @@
+ADDIU t3,zero,5
+ADDIU t4,zero,17
 ADD t2,t3,t4

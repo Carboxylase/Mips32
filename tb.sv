@@ -14,17 +14,19 @@ reg [31:0] counter = 32'b0;
 
 reg [7:0] eightBits;
 
-// topModule #(.instr_file(instr_file)) top(
-//     .clk(clk),
-//     .lowerRegBits(lowerRegBits)
-// );
-
-topModule top(
+topModule #(.instr_file(instr_file)) top(
     .clk(clk),
     .regAccessIndex(regAccessIndex),
     .byteNum(byteNum),
     .eightBits(eightBits)
 );
+
+// topModule top(
+//     .clk(clk),
+//     .regAccessIndex(regAccessIndex),
+//     .byteNum(byteNum),
+//     .eightBits(eightBits)
+// );
 
 
 always

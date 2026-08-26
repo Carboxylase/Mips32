@@ -651,23 +651,23 @@ begin
     end
 end
 
-always @ (*)
+always @ (posedge clk)
 begin
     if (byteNum == 2'b0)
     begin
-        eightBits = regFile[regAccessIndex][7:0];
+        eightBits <= regFile[regAccessIndex][7:0];
     end
     else if (byteNum == 2'b01)
     begin
-        eightBits = regFile[regAccessIndex][15:8];
+        eightBits <= regFile[regAccessIndex][15:8];
     end
     else if (byteNum == 2'b10)
     begin
-        eightBits = regFile[regAccessIndex][23:16];
+        eightBits <= regFile[regAccessIndex][23:16];
     end
     else
     begin
-        eightBits = regFile[regAccessIndex][31:24];
+        eightBits <= regFile[regAccessIndex][31:24];
     end
 
 end
