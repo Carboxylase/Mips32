@@ -378,6 +378,9 @@ begin
                     begin
                         instr_sel = 6'b100101;
                         code = fetched_instruction[25:6];
+                        rs = 2;
+                        rt = 4;
+                        rd = 5;
                         $display("Decoder - SYSCALL");
                     end
 

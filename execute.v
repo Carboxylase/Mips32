@@ -40,11 +40,12 @@ output reg [31:0] program_counter_overwrite,
 output reg overwritePcEnable,
 output reg flush_decode,
 output reg flush_execute,
-output reg stall,
+output reg disableStall,
 output reg [31:0] mulDivNumItOut,
 output reg [63:0] mulDivResultOut,
 output reg [64:0] boothOpOut,
-output reg [5:0] boothNOut
+output reg [5:0] boothNOut,
+output reg exit
 /* verilator lint_off UNUSEDSIGNAL */
 );
 
@@ -72,6 +73,7 @@ reg signed [63:0] mulDivResultTemp;
 reg signed [31:0] mulDivMaxIt;
 reg signed [31:0] mulDivIterator;
 reg signed [64:0] boothOpTemp;
+reg [5:0] boothNTemp;
 // reg signed [31:0] mulDivNumIt;
 
 initial
@@ -86,16 +88,18 @@ begin
     overwritePcEnable = 1'b0;
     flush_decode = 1'b1;
     flush_execute = 1'b1;
-    stall = 1'b0;
+    disableStall = 1'b0;
     mulDivNumItOut = 32'b0;
     mulDivResultOut = 64'b0;
     boothOpOut = 65'b0;
     boothNOut = 6'b0;
+    exit = 1'b1;
 
     temp32BitVal1 = 32'b0;
     temp32BitVal2 = 32'b0;
     temp33BitVal = 33'b0;
     boothOpTemp = 65'b0;
+    boothNTemp = 6'b0;
 
     mulDivResultTemp = 64'b0;
     mulDivMaxIt = 32'b0;
@@ -118,16 +122,18 @@ begin
         overwritePcEnable = 1'b0;
         flush_decode = 1'b1; // reset the rst signal 
         flush_execute = 1'b1; // reset the rst signal 
-        stall = 1'b0;
+        disableStall = 1'b0;
         mulDivNumItOut = 32'b0;
         mulDivResultOut = 64'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
+        exit = 1'b1;
 
         temp32BitVal1 = 32'b0;
         temp32BitVal2 = 32'b0;
         temp33BitVal = 33'b0;
         boothOpTemp = 65'b0;
+        boothNTemp = 6'b0;
 
         mulDivResultTemp = 64'b0;
         mulDivMaxIt = 32'b0;
@@ -147,13 +153,19 @@ begin
         flush_decode = 1'b1; // reset the rst signal
         flush_execute = 1'b1; // reset the rst signal 
         // ------------------------------------------------
-        stall = 1'b0;
+        disableStall = 1'b0;
         mulDivNumItOut = 32'b0;
         mulDivResultOut = 64'b0;
+        boothOpOut = 65'b0;
+        boothNOut = 6'b0;
+        exit = 1'b1;
 
         temp32BitVal1 = 32'b0;
         temp32BitVal2 = 32'b0;
         temp33BitVal = 33'b0;
+        boothOpTemp = 65'b0;
+        boothNTemp = 6'b0;
+
         mulDivResultTemp = 64'b0;
         mulDivMaxIt = 32'b0;
         mulDivIterator = 32'b0;
@@ -315,37 +327,72 @@ begin
                     begin
                         $display("Execute - MUL");
 
-                        boothOpTemp = boothOpIn;
+                        // boothOpTemp = boothOpIn;
                         
+                        // if (boothOpIn[1] == 1'b1 && boothOpIn[0] == 1'b0)
+                        // begin
+                        //     boothOpTemp[64:33] = boothOpIn[64:33] - rs_data;
+                        //     boothOpOut = boothOpTemp >>> 1;
+                        //     boothNOut = boothNIn - 1;
+                        // end
+                        // else if (boothOpIn[1] == 1'b0 && boothOpIn[0] == 1'b1)
+                        // begin
+                        //     boothOpTemp[64:33] = boothOpIn[64:33] + rs_data;
+                        //     boothOpOut = boothOpTemp >>> 1;
+                        //     boothNOut = boothNIn - 1;
+                        // end
+                        // else
+                        // begin
+                        //     boothOpOut = boothOpTemp >>> 1;
+                        //     boothNOut = boothNIn - 1;
+                        // end
+
+                        // if (boothNOut == 6'b0)
+                        // begin
+                        //     executeOutput = boothOpOut[32:1];
+                        //     writebackReg = rd;
+                        //     boothOpOut = 65'b0;
+                        //     disableStall = 1'b1;
+                        // end
+                        // else
+                        // begin
+                        //     disableStall = 1'b0;
+                        // end
+
+                        boothOpTemp = boothOpIn;
+                        boothNTemp = boothNIn;
+
                         if (boothOpIn[1] == 1'b1 && boothOpIn[0] == 1'b0)
                         begin
                             boothOpTemp[64:33] = boothOpIn[64:33] - rs_data;
                             boothOpOut = boothOpTemp >>> 1;
-                            boothNOut = boothNIn - 1;
+                            boothNTemp = boothNIn - 1;
                         end
                         else if (boothOpIn[1] == 1'b0 && boothOpIn[0] == 1'b1)
                         begin
                             boothOpTemp[64:33] = boothOpIn[64:33] + rs_data;
                             boothOpOut = boothOpTemp >>> 1;
-                            boothNOut = boothNIn - 1;
+                            boothNTemp = boothNIn - 1;
                         end
                         else
                         begin
                             boothOpOut = boothOpTemp >>> 1;
-                            boothNOut = boothNIn - 1;
+                            boothNTemp = boothNIn - 1;
                         end
 
-                        if (boothNOut == 6'b0)
+                        if (boothNTemp == 6'b0)
                         begin
                             executeOutput = boothOpOut[32:1];
                             writebackReg = rd;
                             boothOpOut = 65'b0;
-                            stall = 1'b0;
+                            disableStall = 1'b1;
                         end
                         else
                         begin
-                            stall = 1'b1;
+                            disableStall = 1'b0;
                         end
+
+                        boothNOut = boothNTemp;
 
                     end
 
@@ -354,36 +401,39 @@ begin
                         $display("Execute - MUH");
 
                         boothOpTemp = boothOpIn;
-                        
+                        boothNTemp = boothNIn;
+
                         if (boothOpIn[1] == 1'b1 && boothOpIn[0] == 1'b0)
                         begin
                             boothOpTemp[64:33] = boothOpIn[64:33] - rs_data;
                             boothOpOut = boothOpTemp >>> 1;
-                            boothNOut = boothNIn - 1;
+                            boothNTemp = boothNIn - 1;
                         end
                         else if (boothOpIn[1] == 1'b0 && boothOpIn[0] == 1'b1)
                         begin
                             boothOpTemp[64:33] = boothOpIn[64:33] + rs_data;
                             boothOpOut = boothOpTemp >>> 1;
-                            boothNOut = boothNIn - 1;
+                            boothNTemp = boothNIn - 1;
                         end
                         else
                         begin
                             boothOpOut = boothOpTemp >>> 1;
-                            boothNOut = boothNIn - 1;
+                            boothNTemp = boothNIn - 1;
                         end
 
-                        if (boothNOut == 6'b0)
+                        if (boothNTemp == 6'b0)
                         begin
                             executeOutput = boothOpOut[64:33];
                             writebackReg = rd;
                             boothOpOut = 65'b0;
-                            stall = 1'b0;
+                            disableStall = 1'b1;
                         end
                         else
                         begin
-                            stall = 1'b1;
+                            disableStall = 1'b0;
                         end
+
+                        boothNOut = boothNTemp;
                         
                     end
 
@@ -581,6 +631,15 @@ begin
                     6'b100101: // SYSCALL
                     begin
                         $display("Execute - SYSCALL");
+
+                        // v0 will be rs_data
+                        // a0 will be rt_data
+                        // a1 will be rd_data
+
+                        if (rs_data == 10)
+                        begin
+                            exit = 1'b0;
+                        end
                     end
 
                     6'b100110: // TEQ

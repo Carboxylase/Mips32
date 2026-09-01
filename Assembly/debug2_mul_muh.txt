@@ -1,7 +1,7 @@
-ORI t0,zero,19384
-AUI t0,t0,-4274
-ORI t1,zero,394
-AUI t1,t1,24624
+ORI t0,zero,884
+AUI t0,t0,-427
+ORI t1,zero,173
+AUI t1,t1,724
 MUL t2,t0,t1
 MUH t3,t0,t1
 ADDIU t4,t4,1

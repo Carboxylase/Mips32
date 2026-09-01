@@ -16,11 +16,13 @@ end
 /* verilator lint_off UNUSEDSIGNAL */
 //string instr_file;
 // reg rst;
+
 reg [31:0] fin_program_counter;
 reg instr_mem_write_enable;
 reg [31:0] instr_load;
 wire [3:0] instr_mem_err_code;
 reg [31:0] instrWriteAddr;
+reg mw_p_exit;
 /* verilator lint_on UNUSEDSIGNAL */
 
 initial 
@@ -33,26 +35,44 @@ end
 
 wire ef_overwritePcEnable;
 wire [31:0] ef_program_counter_overwrite;
-wire eout_stall;
-reg df_stall;
+wire eout_disableStall;
+reg dout_stall;
 
 always @(posedge clk)
 begin
-    if (eout_stall)
+    if (mw_p_exit == 1'b0)
     begin
-        fin_program_counter <= fin_program_counter;
+        fin_program_counter <= 32'b0;
     end
     else
+    begin
+        if (dout_stall) //eout_stall
         begin
-        if (ef_overwritePcEnable)
-        begin
-            fin_program_counter <= ef_program_counter_overwrite;
+            fin_program_counter <= fin_program_counter;
         end
         else
-        begin
-            fin_program_counter <= fin_program_counter + 4;
+            begin
+            if (ef_overwritePcEnable)
+            begin
+                fin_program_counter <= ef_program_counter_overwrite;
+            end
+            else
+            begin
+                fin_program_counter <= fin_program_counter + 4;
+            end
         end
     end
+end
+
+reg fin_rst;
+initial
+begin
+    fin_rst = 1'b1;
+end
+
+always @ (*)
+begin
+    fin_rst = mw_p_exit;
 end
 // ---------------------------------------------------------------------------
 
@@ -62,11 +82,12 @@ wire [31:0] fd_instr_fetched;
 
 instructionMemory #(.instr_file(instr_file)) instMem  (
                             .clk(clk),
+                            .rst(fin_rst),
                             .write_enable(instr_mem_write_enable),
                             .program_counter (fin_program_counter),
                             .instr_write_in (instr_load),
                             .instrWriteAddr(instrWriteAddr),
-                            .stallIn(eout_stall),
+                            .stallIn(dout_stall),
                             .instr_write_out (fd_instr_fetched),
                             .error_code(instr_mem_err_code));
 
@@ -103,7 +124,7 @@ begin
     // end
     
     fd_p_program_counter <= fin_program_counter;
-    din_rst <= eout_flush_decode;
+    din_rst <= eout_flush_decode | mw_p_exit;
 end
 
 // --------------------------------------------------------------------------------
@@ -247,6 +268,8 @@ wire [63:0] eout_mulDivResult;
 wire [64:0] eout_boothOp;
 wire [5:0] eout_boothN;
 
+wire eout_exit;
+
 reg [4:0] mw_p_writebackReg; // pipeline reg
 reg signed [31:0] mw_p_executeOutput; // pipeline register 
 
@@ -389,49 +412,57 @@ begin
     ein_boothOp = 65'b0;
 end
 
-// always @(*)
-// begin
-//     if (de_opcode == 6'b0 && 
-//         (de_instr_sel == 6'b010001 || 
-//          de_instr_sel == 6'b010010 ||
-//          de_instr_sel == 6'b010011 ||
-//          de_instr_sel == 6'b010100))
-
-//     begin
-
-//     else
-//     begin
-//         df_stall = 1'b0;
-//     end
-// end
-
-always @(posedge clk)
+always @(*)
 begin
-    if (eout_stall)
+    if (de_opcode == 6'b0 && 
+        (de_instr_sel == 6'b010001 || 
+         de_instr_sel == 6'b010010 ||
+         de_instr_sel == 6'b010011 ||
+         de_instr_sel == 6'b010100))
+
     begin
-        de_p_opcode <= de_stall_opcode;
-        de_p_instr_sel <= de_stall_instr_sel;
-        de_p_rs <= de_stall_rs;
-        de_p_rt <= de_stall_rt;
-        de_p_rd <= de_stall_rd;
-        de_p_sa <= de_stall_sa;
-        de_p_code <= de_stall_code;
-        de_p_offset <= de_stall_offset;
-        de_p_instr_index <= de_stall_instr_index;
-        de_p_immediate <= de_stall_immediate;
-        de_p_mc0_sel <= de_stall_mc0_sel;
-        de_p_bp <= de_stall_bp;
-        de_p_msdb <= de_stall_msdb;
-        de_p_lsb <= de_stall_lsb;
-        de_p_i_type <= de_stall_i_type;
-        de_p_rs_data <= de_stall_rs_data;
-        de_p_rt_data <= de_stall_rt_data;
-        de_p_rd_data <= de_stall_rd_data;
-        de_p_base_data <= de_stall_base_data;
-        
+        if (eout_disableStall)
+        begin
+            dout_stall = 1'b0;
+        end
+        else
+        begin
+            dout_stall = 1'b1;
+        end
     end
     else
     begin
+        dout_stall = 1'b0;
+    end
+end
+
+always @(posedge clk)
+begin
+    // if (eout_stall == 1'b1)
+    // begin
+    //     de_p_opcode <= de_stall_opcode;
+    //     de_p_instr_sel <= de_stall_instr_sel;
+    //     de_p_rs <= de_stall_rs;
+    //     de_p_rt <= de_stall_rt;
+    //     de_p_rd <= de_stall_rd;
+    //     de_p_sa <= de_stall_sa;
+    //     de_p_code <= de_stall_code;
+    //     de_p_offset <= de_stall_offset;
+    //     de_p_instr_index <= de_stall_instr_index;
+    //     de_p_immediate <= de_stall_immediate;
+    //     de_p_mc0_sel <= de_stall_mc0_sel;
+    //     de_p_bp <= de_stall_bp;
+    //     de_p_msdb <= de_stall_msdb;
+    //     de_p_lsb <= de_stall_lsb;
+    //     de_p_i_type <= de_stall_i_type;
+    //     de_p_rs_data <= de_stall_rs_data;
+    //     de_p_rt_data <= de_stall_rt_data;
+    //     de_p_rd_data <= de_stall_rd_data;
+    //     de_p_base_data <= de_stall_base_data;
+        
+    // end
+    // else
+    // begin
         de_p_opcode <= de_opcode;
         de_p_instr_sel <= de_instr_sel;
         de_p_rs <= de_rs;
@@ -452,44 +483,45 @@ begin
         de_p_rd_data <= de_rd_data;
         de_p_base_data <= de_base_data;
 
-        de_stall_opcode <= de_opcode;
-        de_stall_instr_sel <= de_instr_sel;
-        de_stall_rs <= de_rs;
-        de_stall_rt <= de_rt;
-        de_stall_rd <= de_rd;
-        de_stall_sa <= de_sa;
-        de_stall_code <= de_code;
-        de_stall_offset <= de_offset;
-        de_stall_instr_index <= de_instr_index;
-        de_stall_immediate <= de_immediate;
-        de_stall_mc0_sel <= de_mc0_sel;
-        de_stall_bp <= de_bp;
-        de_stall_msdb <= de_msdb;
-        de_stall_lsb <= de_lsb;
-        de_stall_i_type <= de_i_type;
-        de_stall_rs_data <= de_rs_data;
-        de_stall_rt_data <= de_rt_data;
-        de_stall_rd_data <= de_rd_data;
-        de_stall_base_data <= de_base_data;
+        // de_stall_opcode <= de_opcode;
+        // de_stall_instr_sel <= de_instr_sel;
+        // de_stall_rs <= de_rs;
+        // de_stall_rt <= de_rt;
+        // de_stall_rd <= de_rd;
+        // de_stall_sa <= de_sa;
+        // de_stall_code <= de_code;
+        // de_stall_offset <= de_offset;
+        // de_stall_instr_index <= de_instr_index;
+        // de_stall_immediate <= de_immediate;
+        // de_stall_mc0_sel <= de_mc0_sel;
+        // de_stall_bp <= de_bp;
+        // de_stall_msdb <= de_msdb;
+        // de_stall_lsb <= de_lsb;
+        // de_stall_i_type <= de_i_type;
+        // de_stall_rs_data <= de_rs_data;
+        // de_stall_rt_data <= de_rt_data;
+        // de_stall_rd_data <= de_rd_data;
+        // de_stall_base_data <= de_base_data;
 
-    end
+    // end
 
-    if ((eout_stall == 1'b0 && (de_opcode == 6'b0 && 
-        (de_instr_sel == 6'b010001 || 
-         de_instr_sel == 6'b010010 ||
-         de_instr_sel == 6'b010011 ||
-         de_instr_sel == 6'b010100))) || 
+    if (dout_stall == 1'b1)
+    // ((eout_stall == 1'b0 && (de_opcode == 6'b0 && 
+    //     (de_instr_sel == 6'b010001 || 
+    //      de_instr_sel == 6'b010010 ||
+    //      de_instr_sel == 6'b010011 ||
+    //      de_instr_sel == 6'b010100))) || 
 
-         (eout_stall == 1'b1 && (de_stall_opcode == 6'b0 &&
-         (de_stall_instr_sel == 6'b010001 || 
-          de_stall_instr_sel == 6'b010010 ||
-          de_stall_instr_sel == 6'b010011 ||
-          de_stall_instr_sel == 6'b010100)))
-        )
+    //      (eout_stall == 1'b1 && (de_stall_opcode == 6'b0 &&
+    //      (de_stall_instr_sel == 6'b010001 || 
+    //       de_stall_instr_sel == 6'b010010 ||
+    //       de_stall_instr_sel == 6'b010011 ||
+    //       de_stall_instr_sel == 6'b010100)))
+    //     )
     begin
         ein_mulDivNumIt <= eout_mulDivNumIt;
         ein_mulDivResult <= eout_mulDivResult;
-        if (eout_stall == 1'b0) // ein_boothN == 6'b0
+        if (ein_boothN == 6'b0) // ein_boothN == 6'b0
         begin
             ein_boothN <= 32;
             ein_boothOp <= {32'b0,de_rt_data,1'b0};
@@ -508,7 +540,7 @@ begin
         ein_boothN <= 6'b0;
     end
 
-    ein_rst <= eout_flush_execute;
+    ein_rst <= eout_flush_execute | mw_p_exit;
 end
 
 // ---------------------------execute output ------------------------------
@@ -556,17 +588,20 @@ execute ex (
             .overwritePcEnable(ef_overwritePcEnable),
             .flush_decode(eout_flush_decode),
             .flush_execute(eout_flush_execute),
-            .stall(eout_stall),
+            .disableStall(eout_disableStall),
             .mulDivNumItOut(eout_mulDivNumIt),
             .mulDivResultOut(eout_mulDivResult),
             .boothOpOut(eout_boothOp),
-            .boothNOut(eout_boothN));
+            .boothNOut(eout_boothN),
+            .exit(eout_exit));
 
 // ------------------- data memory input --------------------------------
 reg [1:0] em_p_memAccessEnable;
 reg [31:0] em_p_memAddr;
 reg [1:0] em_p_accessLength;
 reg em_p_memAccessUnsigned;
+reg em_p_exit;
+reg min_rst;
 
 initial
 begin
@@ -574,6 +609,7 @@ begin
     em_p_memAddr = 32'b0;
     em_p_accessLength = 2'b0;
     em_p_memAccessUnsigned = 1'b0;
+    min_rst = 1'b1;
 end
 
 always @(posedge clk)
@@ -585,6 +621,13 @@ begin
     em_p_executeOutput <= em_executeOutput;
     em_p_writebackReg <= em_writebackReg;
     em_p_memAccessUnsigned <= em_memAccessUnsigned;
+
+    em_p_exit <= eout_exit;
+end
+
+always @(*)
+begin
+    min_rst = mw_p_exit;
 end
 
 // ----------------- data memory output --------------------------------
@@ -592,6 +635,7 @@ wire [31:0] mw_readData;
 
 dataMemory ma (
                 .clk(clk),
+                .rst(min_rst),
                 .memAccessEnable(em_p_memAccessEnable),
                 .memAddr(em_p_memAddr),
                 .accessLength(em_p_accessLength),
@@ -603,9 +647,12 @@ dataMemory ma (
 
 reg [1:0] mw_p_memAccessEnable; // pipeline reg
 
+reg win_rst;
+
 initial
 begin
     mw_p_memAccessEnable = 2'b0;
+    win_rst = 1'b1;
 end
 // reg mw_p_pc_enable;
 
@@ -615,38 +662,52 @@ begin
     mw_p_writebackReg <= em_p_writebackReg;
     mw_p_executeOutput <= em_p_executeOutput;
     // mw_p_pc_enable <= em_p_pc_enable;
+
+    mw_p_exit <= em_p_exit;
+end
+
+always @(*)
+begin
+    win_rst = mw_p_exit;
 end
 
 always @(posedge clk)
 begin
-    if (mw_p_memAccessEnable == 1) // write to memory, not reg
+    if (win_rst == 1'b0)
     begin
-        $display("Writeback: nothing to writeback");
+        regFile[0] <= 32'b0;
     end
-    else if (mw_p_memAccessEnable == 2) // read from mem, write to reg
+    else
     begin
-        if (mw_p_writebackReg != 5'b0)
+        if (mw_p_memAccessEnable == 1) // write to memory, not reg
         begin
-            regFile[mw_p_writebackReg] <= mw_readData;
-            $display("Writeback: Writing %h to register %d from Data Mem", mw_readData, mw_p_writebackReg);
+            $display("Writeback: nothing to writeback");
         end
-        else
+        else if (mw_p_memAccessEnable == 2) // read from mem, write to reg
         begin
-            $display("Writeback: Attempting to write to ZERO Reg - Blocked");
-            // eightBits <= mw_readData[7:0];
+            if (mw_p_writebackReg != 5'b0)
+            begin
+                regFile[mw_p_writebackReg] <= mw_readData;
+                $display("Writeback: Writing %h to register %d from Data Mem", mw_readData, mw_p_writebackReg);
+            end
+            else
+            begin
+                $display("Writeback: Attempting to write to ZERO Reg - Blocked");
+                // eightBits <= mw_readData[7:0];
+            end
         end
-    end
-    else // write from executed stage value to reg
-    begin
-        if (mw_p_writebackReg != 5'b0)
+        else // write from executed stage value to reg
         begin
-            regFile[mw_p_writebackReg] <= mw_p_executeOutput;
-            $display("Writeback: Writing %h to register %d from Data Mem", mw_p_executeOutput, mw_p_writebackReg);
-        end
-        else
-        begin
-            $display("Writeback: Attempting to write to ZERO Reg - Blocked");
-            // eightBits <= mw_p_executeOutput[7:0];
+            if (mw_p_writebackReg != 5'b0)
+            begin
+                regFile[mw_p_writebackReg] <= mw_p_executeOutput;
+                $display("Writeback: Writing %h to register %d from Data Mem", mw_p_executeOutput, mw_p_writebackReg);
+            end
+            else
+            begin
+                $display("Writeback: Attempting to write to ZERO Reg - Blocked");
+                // eightBits <= mw_p_executeOutput[7:0];
+            end
         end
     end
 end

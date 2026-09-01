@@ -4,6 +4,7 @@ module instructionMemory
 #(parameter MEM_SIZE = 10,
 parameter instr_file = "test.txt") // mem_size will represent 2^N    
 (input wire clk,
+input wire rst,
 input wire write_enable,
 input wire [31:0] program_counter,
 input wire [31:0] instr_write_in,
@@ -54,46 +55,53 @@ end
 
 always @ (posedge clk)
 begin
-
-    instr_write_out <= 32'b0;
-    error_code <= 4'b0;
-    // writeComplete = 1'b0;
-
-    if (!write_enable)
+    if (rst == 1'b0)
     begin
-        if (program_counter > 2**MEM_SIZE - 1 || stall_addr > 2**MEM_SIZE - 1)
-        begin
-            error_code <= 4'b0001;
-        end
-        else
-        begin
-            // internal_addr_counter = 32'b0;
-            if (stallIn)
-            begin
-                // instr_write_out <= stall_instr;
-                instr_write_out <= instr_mem[stall_addr];
-            end
-            else
-            begin
-                instr_write_out <= instr_mem[{program_counter[31:28], (program_counter[27:0]) >>> 2}];
-                // stall_instr <= instr_mem[{program_counter[31:28], (program_counter[27:0]) >>> 2}];
-                stall_addr <= {program_counter[31:28], (program_counter[27:0]) >>> 2};
-                $display("program_counter: %d, instruction : %b", program_counter, instr_write_out);
-            end
-        end
+        instr_write_out <= 32'b0; // NOP
+        error_code <= 4'b0;
     end
     else
     begin
-        if (instrWriteAddr > 2**MEM_SIZE -1)
+        instr_write_out <= 32'b0;
+        error_code <= 4'b0;
+        // writeComplete = 1'b0;
+
+        if (!write_enable)
         begin
-            error_code <= 4'b0001;
+            if (program_counter > 2**MEM_SIZE - 1 || stall_addr > 2**MEM_SIZE - 1)
+            begin
+                error_code <= 4'b0001;
+            end
+            else
+            begin
+                // internal_addr_counter = 32'b0;
+                if (stallIn)
+                begin
+                    // instr_write_out <= stall_instr;
+                    instr_write_out <= instr_mem[stall_addr];
+                end
+                else
+                begin
+                    instr_write_out <= instr_mem[{program_counter[31:28], (program_counter[27:0]) >>> 2}];
+                    // stall_instr <= instr_mem[{program_counter[31:28], (program_counter[27:0]) >>> 2}];
+                    stall_addr <= {program_counter[31:28], (program_counter[27:0]) >>> 2};
+                    $display("program_counter: %d, instruction : %b", program_counter, instr_write_out);
+                end
+            end
         end
         else
         begin
-            instr_mem[instrWriteAddr] <= instr_write_in;
-            // internal_addr_counter = internal_addr_counter + 1;
+            if (instrWriteAddr > 2**MEM_SIZE -1)
+            begin
+                error_code <= 4'b0001;
+            end
+            else
+            begin
+                instr_mem[instrWriteAddr] <= instr_write_in;
+                // internal_addr_counter = internal_addr_counter + 1;
+            end
         end
-    end 
+    end
 end
 
 endmodule
