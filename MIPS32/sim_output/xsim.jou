@@ -3,8 +3,8 @@
 # SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
 # IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
 # SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
-# Start of session at: Thu Jul  2 22:39:11 2026
-# Process ID         : 27489
+# Start of session at: Fri Jul 31 00:09:15 2026
+# Process ID         : 50919
 # Current directory  : /home/sn/Documents/VerilogProjects/MIPS32/MIPS32/sim_output
 # Command line       : xsim -source {xsim.dir/sim_snapshot/xsim_script.tcl}
 # Log file           : /home/sn/Documents/VerilogProjects/MIPS32/MIPS32/sim_output/xsim.log
@@ -13,13 +13,13 @@
 # Platform           : Ubuntu
 # Operating System   : Ubuntu 24.04.3 LTS
 # Processor Detail   : Intel(R) Core(TM) Ultra 7 155U
-# CPU Frequency      : 1391.785 MHz
+# CPU Frequency      : 1127.958 MHz
 # CPU Physical cores : 12
 # CPU Logical cores  : 14
 # Host memory        : 33096 MB
 # Swap memory        : 2147 MB
 # Total Virtual      : 35244 MB
-# Available Virtual  : 29135 MB
+# Available Virtual  : 27193 MB
 #-----------------------------------------------------------
 start_gui
 source xsim.dir/sim_snapshot/xsim_script.tcl

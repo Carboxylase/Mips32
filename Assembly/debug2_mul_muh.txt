@@ -1,0 +1,11 @@
+ORI t0,zero,884
+AUI t0,t0,-427
+ORI t1,zero,173
+AUI t1,t1,724
+MUL t2,t0,t1
+MUH t3,t0,t1
+ADDIU t4,t4,1
+ADDIU t5,t5,2
+ADDIU t6,t6,3
+ADDIU v0,zero,10
+SYSCALL

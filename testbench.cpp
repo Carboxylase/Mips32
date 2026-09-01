@@ -10,15 +10,22 @@ void clkToggle(VtopModule *tb, VerilatedVcdC *tfp, int *tickCount);
 int main (int argc, char**argv)
 {
 
-    if (argc == 1)
-    {
-        std::cout << "Instruction File Name Required - Exiting" << std::endl;
-        return 1;
-    }
-    std::string instrFile = (std::string)argv[1]; // argv[0] is the program name
-    std::cout << "Using Intruction File: " << instrFile << std::endl;
+    // if (argc == 1)
+    // {
+    //     std::cout << "Instruction File Name Required - Exiting" << std::endl;
+    //     return 1;
+    // }
+    // std::string instrFile = (std::string)argv[1]; // argv[0] is the program name
+    // std::cout << "Using Intruction File: " << instrFile << std::endl;
 
-    Verilated::commandArgs(argc, argv);
+    int clockCycleCount = 50;
+
+    if (argc > 1)
+    {
+        clockCycleCount = std::stoi(argv[1]);
+    }
+
+    // Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
 
     // int tick = 0;
@@ -34,8 +41,6 @@ int main (int argc, char**argv)
     // loadInstrMemory(tb, tfp, instrFile);
 
     int tickCount = 0;
-
-    int clockCycleCount = 20;
 
     for (int i = 0; i <= clockCycleCount; i++)
     {
