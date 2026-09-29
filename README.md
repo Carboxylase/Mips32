@@ -25,7 +25,9 @@ In the future if the result needs to be accessed again to return the other 32 bi
 The Vivado .xpr file can be found in the MIPS32 sub-directory. There are several scripts that can be run from the Vivado TCL console in GUI mode.
 
 simPar.tcl: will launch a standalone simulation.
+
 synImp.tcl: will synthesize and implement the desing - used to check the compliance of the design with the FPGA architecutre.
+
 genBits.tcl: will synthesize and implement the design, then generate the bit stream and flash the FPGA.
 
 # Verilator Build
