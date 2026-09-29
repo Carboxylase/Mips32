@@ -26,23 +26,23 @@ The Vivado .xpr file can be found in the MIPS32 sub-directory. There are several
 
 Each script will require an instruction file as an input. To set the input, run the following commands into the TCL console:
 
-set argv [list <path to instruction memory file>]
+_set argv [list (path to instruction memory file)]_
 
-set argc [llength argv]
+_set argc [llength argv]_
 
 An example input would be:
 
-set argv [list ../../Binary/Div_Binary.txt]
+_set argv [list ../../Binary/Div_Binary.txt]_
 
-set argc [llength argv]
+_set argc [llength argv]_
 
 Then, run any of the following scripts based on the desired outcome.
 
-simPar.tcl: will launch a standalone simulation.
+__simPar.tcl:__ will launch a standalone simulation.
 
-synImp.tcl: will synthesize and implement the desing - used to check the compliance of the design with the FPGA architecutre.
+__synImp.tcl:__ will synthesize and implement the desing - used to check the compliance of the design with the FPGA architecutre.
 
-genBits.tcl: will synthesize and implement the design, then generate the bit stream and flash the FPGA.
+__genBits.tcl:__ will synthesize and implement the design, then generate the bit stream and flash the FPGA.
 
 # Verilator Build
 
