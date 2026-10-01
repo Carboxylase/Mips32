@@ -1,0 +1,8 @@
+ADDIU t0,zero,428
+ADDIU t1,zero,-17
+DIV t1,t0,t1
+ADDIU t2,zero,1
+ADDIU t3,zero,2
+ADDIU t4,zero,3
+ADDIU v0,zero,10
+SYSCALL

@@ -7,6 +7,8 @@ input wire [4:0] regAccessIndex,
 input wire [1:0] byteNum,
 output reg [7:0] eightBits);
 
+`include "commonFunctions.vh"
+
 initial begin
     $dumpfile("testbench.vcd");
     $dumpvars();
@@ -247,6 +249,10 @@ reg [63:0] ein_mulDivResult;
 reg [64:0] ein_boothOp;
 reg [5:0] ein_boothN;
 
+reg [61:0] ein_boothOpDiv;
+reg [31:0] ein_signedMagRtData;
+reg [31:0] ein_signedMagRsData;
+
 reg ein_rst;
 
 // ---------------------------------------------------------------------------
@@ -267,6 +273,10 @@ wire [63:0] eout_mulDivResult;
 
 wire [64:0] eout_boothOp;
 wire [5:0] eout_boothN;
+
+wire [61:0] eout_boothOpDiv;
+wire [31:0] eout_signedMagRtData;
+wire [31:0] eout_signedMagRsData;
 
 wire eout_exit;
 
@@ -412,57 +422,37 @@ begin
     ein_boothOp = 65'b0;
 end
 
+// multiplication, div, and mod stall
 always @(*)
 begin
     if (de_opcode == 6'b0 && 
         (de_instr_sel == 6'b010001 || 
          de_instr_sel == 6'b010010 ||
          de_instr_sel == 6'b010011 ||
-         de_instr_sel == 6'b010100))
+         de_instr_sel == 6'b010100 ||
+         de_instr_sel == 6'b000110 ||
+         de_instr_sel == 6'b000111 ||
+         de_instr_sel == 6'b001000 ||
+         de_instr_sel == 6'b001001))
 
     begin
         if (eout_disableStall)
         begin
-            dout_stall = 1'b0;
+            dout_stall <= 1'b0;
         end
         else
         begin
-            dout_stall = 1'b1;
+            dout_stall <= 1'b1;
         end
     end
     else
     begin
-        dout_stall = 1'b0;
+        dout_stall <= 1'b0;
     end
 end
 
 always @(posedge clk)
 begin
-    // if (eout_stall == 1'b1)
-    // begin
-    //     de_p_opcode <= de_stall_opcode;
-    //     de_p_instr_sel <= de_stall_instr_sel;
-    //     de_p_rs <= de_stall_rs;
-    //     de_p_rt <= de_stall_rt;
-    //     de_p_rd <= de_stall_rd;
-    //     de_p_sa <= de_stall_sa;
-    //     de_p_code <= de_stall_code;
-    //     de_p_offset <= de_stall_offset;
-    //     de_p_instr_index <= de_stall_instr_index;
-    //     de_p_immediate <= de_stall_immediate;
-    //     de_p_mc0_sel <= de_stall_mc0_sel;
-    //     de_p_bp <= de_stall_bp;
-    //     de_p_msdb <= de_stall_msdb;
-    //     de_p_lsb <= de_stall_lsb;
-    //     de_p_i_type <= de_stall_i_type;
-    //     de_p_rs_data <= de_stall_rs_data;
-    //     de_p_rt_data <= de_stall_rt_data;
-    //     de_p_rd_data <= de_stall_rd_data;
-    //     de_p_base_data <= de_stall_base_data;
-        
-    // end
-    // else
-    // begin
         de_p_opcode <= de_opcode;
         de_p_instr_sel <= de_instr_sel;
         de_p_rs <= de_rs;
@@ -483,61 +473,67 @@ begin
         de_p_rd_data <= de_rd_data;
         de_p_base_data <= de_base_data;
 
-        // de_stall_opcode <= de_opcode;
-        // de_stall_instr_sel <= de_instr_sel;
-        // de_stall_rs <= de_rs;
-        // de_stall_rt <= de_rt;
-        // de_stall_rd <= de_rd;
-        // de_stall_sa <= de_sa;
-        // de_stall_code <= de_code;
-        // de_stall_offset <= de_offset;
-        // de_stall_instr_index <= de_instr_index;
-        // de_stall_immediate <= de_immediate;
-        // de_stall_mc0_sel <= de_mc0_sel;
-        // de_stall_bp <= de_bp;
-        // de_stall_msdb <= de_msdb;
-        // de_stall_lsb <= de_lsb;
-        // de_stall_i_type <= de_i_type;
-        // de_stall_rs_data <= de_rs_data;
-        // de_stall_rt_data <= de_rt_data;
-        // de_stall_rd_data <= de_rd_data;
-        // de_stall_base_data <= de_base_data;
-
-    // end
-
     if (dout_stall == 1'b1)
-    // ((eout_stall == 1'b0 && (de_opcode == 6'b0 && 
-    //     (de_instr_sel == 6'b010001 || 
-    //      de_instr_sel == 6'b010010 ||
-    //      de_instr_sel == 6'b010011 ||
-    //      de_instr_sel == 6'b010100))) || 
-
-    //      (eout_stall == 1'b1 && (de_stall_opcode == 6'b0 &&
-    //      (de_stall_instr_sel == 6'b010001 || 
-    //       de_stall_instr_sel == 6'b010010 ||
-    //       de_stall_instr_sel == 6'b010011 ||
-    //       de_stall_instr_sel == 6'b010100)))
-    //     )
     begin
         ein_mulDivNumIt <= eout_mulDivNumIt;
         ein_mulDivResult <= eout_mulDivResult;
-        if (ein_boothN == 6'b0) // ein_boothN == 6'b0
+
+        if (de_opcode == 6'b0 && 
+            (de_instr_sel == 6'b010001 || 
+            de_instr_sel == 6'b010010 ||
+            de_instr_sel == 6'b010011 ||
+            de_instr_sel == 6'b010100))
         begin
-            ein_boothN <= 32;
-            ein_boothOp <= {32'b0,de_rt_data,1'b0};
+            if (ein_boothN == 6'b0) // ein_boothN == 6'b0
+            begin
+                ein_boothOp <= {32'b0,de_rt_data,1'b0};
+                ein_boothN <= 32;
+            end
+            else
+            begin
+                ein_boothN <= eout_boothN;
+                ein_boothOp <= eout_boothOp;
+            end
         end
-        else
+
+        if (de_opcode == 6'b0 && (
+            de_instr_sel == 6'b000110 ||
+            de_instr_sel == 6'b000111 ||
+            de_instr_sel == 6'b001000 ||
+            de_instr_sel == 6'b001001))
         begin
-            ein_boothN <= eout_boothN;
-            ein_boothOp <= eout_boothOp;
+            if (ein_boothN == 6'b0)
+            begin
+                // ein_boothOp <= {32'b0, convertSignedMag(de_rs_data) <<< 1, 2'b0};
+                // ein_boothN <= 31;
+                ein_boothOpDiv <= 62'b0;
+                ein_boothN <= 32;
+                ein_signedMagRsData = 32'b0;
+                ein_signedMagRtData = 32'b0;
+                
+            end
+            else
+            begin
+                // ein_boothOp <= eout_boothOp;
+                // ein_boothN <= eout_boothN;
+                ein_boothOpDiv <= eout_boothOpDiv;
+                ein_boothN <= eout_boothN;
+                ein_signedMagRsData <= eout_signedMagRsData;
+                ein_signedMagRtData <= eout_signedMagRtData;
+            end
         end
     end
     else
     begin
         ein_mulDivNumIt <= 32'b0;
         ein_mulDivResult <= 64'b0;
+
         ein_boothOp <= 65'b0;
         ein_boothN <= 6'b0;
+
+        ein_boothOpDiv <= 62'b0;
+        ein_signedMagRsData <= 32'b0;
+        ein_signedMagRtData <= 32'b0;
     end
 
     ein_rst <= eout_flush_execute | mw_p_exit;
@@ -578,6 +574,9 @@ execute ex (
             .mulDivResultIn(ein_mulDivResult),
             .boothOpIn(ein_boothOp),
             .boothNIn(ein_boothN),
+            .boothOpDivIn(ein_boothOpDiv),
+            .signedMagRsDataIn(ein_signedMagRsData),
+            .signedMagRtDataIn(ein_signedMagRtData),
             .memAccessEnable(em_memAccessEnable),
             .memAddr(em_memAddr),
             .accessLength(em_accessLength),
@@ -593,6 +592,9 @@ execute ex (
             .mulDivResultOut(eout_mulDivResult),
             .boothOpOut(eout_boothOp),
             .boothNOut(eout_boothN),
+            .boothOpDivOut(eout_boothOpDiv),
+            .signedMagRsDataOut(eout_signedMagRsData),
+            .signedMagRtDataOut(eout_signedMagRtData),
             .exit(eout_exit));
 
 // ------------------- data memory input --------------------------------

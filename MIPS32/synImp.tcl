@@ -1,18 +1,26 @@
 # open_project MIPS32.xpr
 # set_property file_type {Verilog Header} [get_files ./../commonFunctions.vh]
 
-# synth_design -top topModule -flatten_hierarchy full -generic "instr_file=../Binary/Addiu_Binary.mem"
-synth_design -top topModule -flatten_hierarchy none -generic "instr_file=../Binary/Mul_Muh_Binary.txt"
+if {$argc != 1} {
+    puts "Missing Instruction Memory File ... Exiting"
+} else {
 
-report_utilization -file utilization.txt
+    set INSTR_FILE [lindex $argv 0]
+    puts "instr file: $INSTR_FILE"
 
-report_timing > timing.txt
+    # synth_design -top topModule -flatten_hierarchy full -generic "instr_file=../Binary/Addiu_Binary.mem"
+    synth_design -top topModule -flatten_hierarchy none -generic "instr_file=$INSTR_FILE"
 
-opt_design
+    report_utilization -file utilization.txt
 
-place_design -directive Default
-write_checkpoint -force post_place.dcp
+    report_timing > timing.txt
 
-report_utilization -file post_route_utilization.rpt
+    opt_design
 
-write_checkpoint -force post_route.dcp
+    place_design -directive Default
+    write_checkpoint -force post_place.dcp
+
+    report_utilization -file post_route_utilization.rpt
+
+    write_checkpoint -force post_route.dcp
+}

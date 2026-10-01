@@ -30,6 +30,9 @@ input wire [31:0] mulDivNumItIn,
 input wire [63:0] mulDivResultIn,
 input wire [64:0] boothOpIn,
 input wire [5:0] boothNIn,
+input wire [61:0] boothOpDivIn,
+input wire [31:0] signedMagRsDataIn,
+input wire [31:0] signedMagRtDataIn,
 output reg [1:0] memAccessEnable,
 output reg [31:0] memAddr,
 output reg [1:0] accessLength,
@@ -45,6 +48,9 @@ output reg [31:0] mulDivNumItOut,
 output reg [63:0] mulDivResultOut,
 output reg [64:0] boothOpOut,
 output reg [5:0] boothNOut,
+output reg [61:0] boothOpDivOut,
+output reg [31:0] signedMagRsDataOut,
+output reg [31:0] signedMagRtDataOut,
 output reg exit
 /* verilator lint_off UNUSEDSIGNAL */
 );
@@ -74,6 +80,7 @@ reg signed [31:0] mulDivMaxIt;
 reg signed [31:0] mulDivIterator;
 reg signed [64:0] boothOpTemp;
 reg [5:0] boothNTemp;
+reg [61:0] boothOpDivTemp;
 // reg signed [31:0] mulDivNumIt;
 
 initial
@@ -93,6 +100,9 @@ begin
     mulDivResultOut = 64'b0;
     boothOpOut = 65'b0;
     boothNOut = 6'b0;
+    boothOpDivOut = 62'b0;
+    signedMagRsDataOut = 32'b0;
+    signedMagRtDataOut = 32'b0;
     exit = 1'b1;
 
     temp32BitVal1 = 32'b0;
@@ -100,6 +110,7 @@ begin
     temp33BitVal = 33'b0;
     boothOpTemp = 65'b0;
     boothNTemp = 6'b0;
+    boothOpDivTemp = 62'b0;
 
     mulDivResultTemp = 64'b0;
     mulDivMaxIt = 32'b0;
@@ -127,6 +138,9 @@ begin
         mulDivResultOut = 64'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
+        boothOpDivOut = 62'b0;
+        signedMagRsDataOut = 32'b0;
+        signedMagRtDataOut = 32'b0;
         exit = 1'b1;
 
         temp32BitVal1 = 32'b0;
@@ -134,6 +148,7 @@ begin
         temp33BitVal = 33'b0;
         boothOpTemp = 65'b0;
         boothNTemp = 6'b0;
+        boothOpDivTemp = 62'b0;
 
         mulDivResultTemp = 64'b0;
         mulDivMaxIt = 32'b0;
@@ -158,6 +173,9 @@ begin
         mulDivResultOut = 64'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
+        boothOpDivOut = 62'b0;
+        signedMagRsDataOut = 32'b0;
+        signedMagRtDataOut = 32'b0;
         exit = 1'b1;
 
         temp32BitVal1 = 32'b0;
@@ -224,12 +242,114 @@ begin
 
 // ----- BELOW IS PROBLEM -----
 
-                    // 6'b000110: // DIV
-                    // begin
-                    //     $display("Execute - DIV");
-                    //     executeOutput = rs_data / rt_data;
-                    //     writebackReg = rd;
-                    // end
+                    6'b000110: // DIV
+                    begin
+                        $display("Execute - DIV");
+
+                        // boothOpTemp = boothOpIn;
+                        // boothNTemp = boothNIn;
+
+                        // boothOpTemp = boothOpTemp <<< 1;
+                        // // $display("2c rs_data: %b", rs_data);
+                        // // $display("abs sm rs_data: %b", boothOpTemp[33:3]);
+                        // // $display("abs sm rs_data: %d", boothOpTemp[33:3]);
+                        // temp32BitVal1 = convertSignedMag(rt_data);
+                        // boothOpTemp[64:34] = boothOpTemp[64:34] - temp32BitVal1[30:0];
+                        // // $display("abs sm rt_data: %d", convertSignedMag(rt_data)[30:0]);
+
+                        // if (boothOpTemp[64] == 1'b1)
+                        // begin
+                        //     boothOpTemp[3] = 1'b0;
+                        //     // temp32BitVal1 = convertSignedMag(rt_data);
+                        //     boothOpTemp[64:34] = boothOpTemp[64:34] + temp32BitVal1[30:0];
+                        // end
+                        // else
+                        // begin
+                        //     boothOpTemp[3] = 1'b1;
+                        // end
+
+                        // boothNTemp = boothNTemp - 1;
+
+                        // if (boothNTemp == 6'b0)
+                        // begin
+                        //     // $display("output sm: %h", {rs_data[31] ^ rt_data[31], boothOpTemp[33:3]});
+                        //     // $display("output 2c: %h", convert2C({rs_data[31] ^ rt_data[31], boothOpTemp[33:3]}));
+                        //     // executeOutput = convert2C({rs_data[31] ^ rt_data[31], boothOpTemp[33:3]});
+                        //     executeOutput = 32'b1;
+                        //     writebackReg = rd;
+                        //     boothOpOut = 65'b0;
+                        //     disableStall = 1'b1;
+                        // end
+                        // else
+                        // begin
+                        //     disableStall = 1'b0;
+                        //     boothOpOut = boothOpTemp;
+                        // end
+
+                        // boothNOut = boothNTemp;
+
+                        // -------------------------------------
+
+                        boothOpDivTemp = boothOpDivIn;
+                        boothNTemp = boothNIn;
+
+                        if (boothNTemp == 32)
+                        begin
+                            temp32BitVal1 = convertSignedMag(rs_data);
+
+                            signedMagRtDataOut = convertSignedMag(rt_data);
+                            signedMagRsDataOut = temp32BitVal1;
+                            boothOpDivOut = {31'b0,temp32BitVal1[30:0]};
+                            boothNOut = boothNTemp - 1;
+
+                            $display("abs sm rs_data: %d", signedMagRsDataOut[30:0]);
+                            $display("abs sm rt_data: %d", signedMagRtDataOut[30:0]);
+
+                        end
+                        else if (boothNTemp <= 31 && boothNTemp >= 1)
+                        begin
+
+                            boothOpDivTemp = boothOpDivTemp <<< 1;
+                            $display("2c rs_data: %b", rs_data);
+                            $display("abs sm rs_data: %b", boothOpDivTemp[30:0]);
+                            $display("abs sm rs_data: %d", boothOpDivTemp[30:0]);
+                            boothOpDivTemp[61:31] = boothOpDivTemp[61:31] - signedMagRtDataIn[30:0];
+                            $display("abs sm rt_data: %d", signedMagRtDataIn[30:0]);
+
+                            if (boothOpDivTemp[61] == 1'b1)
+                            begin
+                                boothOpDivTemp[0] = 1'b0;
+                                // temp32BitVal1 = convertSignedMag(rt_data);
+                                boothOpDivTemp[61:31] = boothOpDivTemp[61:31] + signedMagRtDataIn[30:0];
+                            end
+                            else
+                            begin
+                                boothOpDivTemp[0] = 1'b1;
+                            end
+
+                            boothNTemp = boothNTemp - 1;
+
+                            boothNOut = boothNTemp;
+                            boothOpDivOut = boothOpDivTemp;
+                            signedMagRtDataOut = signedMagRtDataIn;
+                            signedMagRsDataOut = signedMagRsDataIn;
+                        end
+                        else
+                        begin
+
+                            boothNOut = 6'b0;
+                            boothOpDivOut = 62'b0;
+                            signedMagRtDataOut = 32'b0;
+                            signedMagRsDataOut = 32'b0;
+
+                            $display("output sm: %h", {rs_data[31] ^ rt_data[31], boothOpDivTemp[30:0]});
+                            $display("output 2c: %h", convert2C({rs_data[31] ^ rt_data[31], boothOpDivTemp[30:0]}));
+                            executeOutput = convert2C({rs_data[31] ^ rt_data[31], boothOpDivTemp[30:0]});
+                            writebackReg = rd;
+                            boothOpDivOut = 62'b0;
+                            disableStall = 1'b1;
+                        end
+                    end
                                 
                     // 6'b000111: // MOD
                     // begin

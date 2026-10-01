@@ -146,5 +146,113 @@ function [31:0] mult
         mult = temp;
     end
 endfunction
+
+function [31:0] convertSignedMag
+    (input [31:0] data);
+    reg [31:0] temp;
+    begin
+        temp = 32'b0;
+        if (data[31] == 1'b1)
+        begin
+            temp = data - 1;
+            temp = ~temp;
+            temp[31] = 1;
+            convertSignedMag = temp; 
+        end
+        else
+        begin
+            convertSignedMag = data;
+        end
+    end
+endfunction
+
+function [31:0] convert2C
+    (input [31:0] data);
+    reg [31:0] temp;
+    begin
+        temp = 32'b0;
+        if (data[31] == 1'b1)
+        begin
+            temp = ~data;
+            temp = temp + 1;
+            temp[31] = 1;
+            convert2C= temp; 
+        end
+        else
+        begin
+            convert2C = data;
+        end
+    end
+endfunction
+
+function [31:0] subSignedMag
+    (input [31:0] rs_data, [31:0] rt_data);
+    reg [31:0] temp;
+    begin
+        temp = 32'b0;
+        if (rs_data[31] != rt_data[31])
+        begin
+            temp = $unsigned(rs_data[30:0]) + $unsigned(rt_data[30:0]); 
+            temp[31] = rs_data[31];
+            subSignedMag = temp;
+        end
+        else
+        begin
+            if ($unsigned(rs_data[30:0]) > $unsigned(rt_data[30:0]))
+            begin
+                temp = $unsigned(rs_data[30:0]) - $unsigned(rt_data[30:0]);
+                temp[31] = rs_data[31];
+                subSignedMag = temp;
+            end
+            else if ($unsigned(rs_data[30:0]) < $unsigned(rt_data[30:0]))
+            begin
+                temp = $unsigned(rt_data[30:0]) - $unsigned(rs_data[30:0]);
+                temp[31] = ~rs_data[31];
+                subSignedMag = temp;
+            end
+            else
+            begin
+                temp = $unsigned(rs_data[30:0]) - $unsigned(rt_data[30:0]);
+                temp[31] = rs_data[31];
+                subSignedMag = temp;
+            end
+        end
+    end
+endfunction
+
+function [32:0] addSignedMag
+    (input [31:0] rs_data, [31:0] rt_data);
+    reg [32:0] temp;
+    begin
+        temp = 32'b0;
+        if (rs_data[31] == rt_data[31])
+        begin
+            temp = $unsigned(rs_data[30:0]) + $unsigned(rt_data[30:0]); 
+            temp[31] = rs_data[31];
+            addSignedMag = temp;
+        end
+        else
+        begin
+            if ($unsigned(rs_data[30:0]) > $unsigned(rt_data[30:0]))
+            begin
+                temp = $unsigned(rs_data[30:0]) - $unsigned(rt_data[30:0]);
+                temp[31] = rs_data[31];
+                addSignedMag = temp;
+            end
+            else if ($unsigned(rs_data[30:0]) < $unsigned(rt_data[30:0]))
+            begin
+                temp = $unsigned(rt_data[30:0]) - $unsigned(rs_data[30:0]);
+                temp[31] = ~rs_data[31];
+                addSignedMag = temp;
+            end
+            else
+            begin
+                temp = $unsigned(rs_data[30:0]) - $unsigned(rt_data[30:0]);
+                temp[31] = rs_data[31];
+                addSignedMag = temp;
+            end
+        end
+    end
+endfunction
 `endif
 
