@@ -43,7 +43,6 @@ output reg [31:0] program_counter_overwrite,
 output reg overwritePcEnable,
 output reg flush_decode,
 output reg flush_execute,
-output reg disableStall,
 output reg [64:0] boothOpOut,
 output reg [5:0] boothNOut,
 output reg [61:0] boothOpDivOut,
@@ -92,7 +91,6 @@ begin
     overwritePcEnable = 1'b0;
     flush_decode = 1'b1;
     flush_execute = 1'b1;
-    disableStall = 1'b0;
     boothOpOut = 65'b0;
     boothNOut = 6'b0;
     boothOpDivOut = 62'b0;
@@ -124,7 +122,6 @@ begin
         overwritePcEnable = 1'b0;
         flush_decode = 1'b1; // reset the rst signal 
         flush_execute = 1'b1; // reset the rst signal 
-        disableStall = 1'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
         boothOpDivOut = 62'b0;
@@ -152,7 +149,6 @@ begin
         overwritePcEnable = 1'b0;
         flush_decode = 1'b1; // reset the rst signal
         flush_execute = 1'b1; // reset the rst signal 
-        disableStall = 1'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
         boothOpDivOut = 62'b0;
