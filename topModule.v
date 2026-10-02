@@ -37,8 +37,7 @@ end
 
 wire ef_overwritePcEnable;
 wire [31:0] ef_program_counter_overwrite;
-wire eout_disableStall;
-reg dout_stall;
+wire eout_stall;
 
 always @(posedge clk)
 begin
@@ -48,7 +47,7 @@ begin
     end
     else
     begin
-        if (dout_stall) //eout_stall
+        if (eout_stall) //dout_stall
         begin
             fin_program_counter <= fin_program_counter;
         end
@@ -89,7 +88,7 @@ instructionMemory #(.instr_file(instr_file)) instMem  (
                             .program_counter (fin_program_counter),
                             .instr_write_in (instr_load),
                             .instrWriteAddr(instrWriteAddr),
-                            .stallIn(dout_stall),
+                            .stallIn(eout_stall),
                             .instr_write_out (fd_instr_fetched),
                             .error_code(instr_mem_err_code));
 
@@ -113,18 +112,6 @@ end
 
 always @(posedge clk)
 begin
-    // if (eout_stall)
-    // begin
-    //     fd_p_instr_fetched <= fd_stall_instr_fetched;
-    // end
-    // else
-    // begin
-    //     fd_stall_instr_fetched <= fd_instr_fetched;
-    //     fd_p_instr_fetched <= fd_instr_fetched;
-
-    //     fd_p_program_counter <= fin_program_counter;
-    // end
-    
     fd_p_program_counter <= fin_program_counter;
     din_rst <= eout_flush_decode | mw_p_exit;
 end
@@ -422,37 +409,36 @@ begin
     ein_boothOp = 65'b0;
 end
 
-// multiplication, div, and mod stall
-always @(*)
+always @(posedge clk)
 begin
-    if (de_opcode == 6'b0 && 
-        (de_instr_sel == 6'b010001 || 
-         de_instr_sel == 6'b010010 ||
-         de_instr_sel == 6'b010011 ||
-         de_instr_sel == 6'b010100 ||
-         de_instr_sel == 6'b000110 ||
-         de_instr_sel == 6'b000111 ||
-         de_instr_sel == 6'b001000 ||
-         de_instr_sel == 6'b001001))
 
+    if (eout_stall)
     begin
-        if (eout_disableStall)
-        begin
-            dout_stall <= 1'b0;
-        end
-        else
-        begin
-            dout_stall <= 1'b1;
-        end
+        
+        de_p_opcode <= de_stall_opcode;
+        de_p_instr_sel <= de_stall_instr_sel;
+        de_p_rs <= de_stall_rs;
+        de_p_rt <= de_stall_rt;
+        de_p_rd <= de_stall_rd;
+        de_p_sa <= de_stall_sa;
+        de_p_code <= de_stall_code;
+        de_p_offset <= de_stall_offset;
+        de_p_instr_index <= de_stall_instr_index;
+        de_p_immediate <= de_stall_immediate;
+        de_p_mc0_sel <= de_stall_mc0_sel;
+        de_p_bp <= de_stall_bp;
+        de_p_msdb <= de_stall_msdb;
+        de_p_lsb <= de_stall_lsb;
+        de_p_i_type <= de_stall_i_type;
+        de_p_rs_data <= de_stall_rs_data;
+        de_p_rt_data <= de_stall_rt_data;
+        de_p_rd_data <= de_stall_rd_data;
+        de_p_base_data <= de_stall_base_data;
+
     end
     else
     begin
-        dout_stall <= 1'b0;
-    end
-end
 
-always @(posedge clk)
-begin
         de_p_opcode <= de_opcode;
         de_p_instr_sel <= de_instr_sel;
         de_p_rs <= de_rs;
@@ -473,18 +459,48 @@ begin
         de_p_rd_data <= de_rd_data;
         de_p_base_data <= de_base_data;
 
-    if (dout_stall == 1'b1)
-    begin
-        ein_mulDivNumIt <= eout_mulDivNumIt;
-        ein_mulDivResult <= eout_mulDivResult;
+        de_stall_opcode <= de_opcode;
+        de_stall_instr_sel <= de_instr_sel;
+        de_stall_rs <= de_rs;
+        de_stall_rt <= de_rt;
+        de_stall_rd <= de_rd;
+        de_stall_sa <= de_sa;
+        de_stall_code <= de_code;
+        de_stall_offset <= de_offset;
+        de_stall_instr_index <= de_instr_index;
+        de_stall_immediate <= de_immediate;
+        de_stall_mc0_sel <= de_mc0_sel;
+        de_stall_bp <= de_bp;
+        de_stall_msdb <= de_msdb;
+        de_stall_lsb <= de_lsb;
+        de_stall_i_type <= de_i_type;
+        de_stall_rs_data <= de_rs_data;
+        de_stall_rt_data <= de_rt_data;
+        de_stall_rd_data <= de_rd_data;
+        de_stall_base_data <= de_base_data;
 
-        if (de_opcode == 6'b0 && 
+    end
+
+    // if (dout_stall == 1'b1)
+    // begin
+        // ein_mulDivNumIt <= eout_mulDivNumIt;
+        // ein_mulDivResult <= eout_mulDivResult;
+
+        if ((de_opcode == 6'b0 && 
             (de_instr_sel == 6'b010001 || 
             de_instr_sel == 6'b010010 ||
             de_instr_sel == 6'b010011 ||
             de_instr_sel == 6'b010100))
+
+            ||
+
+            (de_stall_opcode == 6'b0 && 
+            (de_stall_instr_sel == 6'b010001 || 
+            de_stall_instr_sel == 6'b010010 ||
+            de_stall_instr_sel == 6'b010011 ||
+            de_stall_instr_sel == 6'b010100)))
         begin
-            if (ein_boothN == 6'b0) // ein_boothN == 6'b0
+            if (eout_stall == 1'b0) // ein_boothN == 6'b0
             begin
                 ein_boothOp <= {32'b0,de_rt_data,1'b0};
                 ein_boothN <= 32;
@@ -496,13 +512,22 @@ begin
             end
         end
 
-        if (de_opcode == 6'b0 && (
-            de_instr_sel == 6'b000110 ||
-            de_instr_sel == 6'b000111 ||
-            de_instr_sel == 6'b001000 ||
-            de_instr_sel == 6'b001001))
+        else if (  (de_opcode == 6'b0 && (
+                    de_instr_sel == 6'b000110 ||
+                    de_instr_sel == 6'b000111 ||
+                    de_instr_sel == 6'b001000 ||
+                    de_instr_sel == 6'b001001))
+
+                    ||
+
+                    (de_stall_opcode == 6'b0 && (
+                    de_stall_instr_sel == 6'b000110 ||
+                    de_stall_instr_sel == 6'b000111 ||
+                    de_stall_instr_sel == 6'b001000 ||
+                    de_stall_instr_sel == 6'b001001))
+                )
         begin
-            if (ein_boothN == 6'b0)
+            if (eout_stall == 1'b0) //ein_boothN == 6'b0
             begin
                 // ein_boothOp <= {32'b0, convertSignedMag(de_rs_data) <<< 1, 2'b0};
                 // ein_boothN <= 31;
@@ -522,19 +547,16 @@ begin
                 ein_signedMagRtData <= eout_signedMagRtData;
             end
         end
-    end
-    else
-    begin
-        ein_mulDivNumIt <= 32'b0;
-        ein_mulDivResult <= 64'b0;
 
-        ein_boothOp <= 65'b0;
-        ein_boothN <= 6'b0;
+        else
+        begin
+            ein_boothOp <= 65'b0;
+            ein_boothN <= 6'b0;
 
-        ein_boothOpDiv <= 62'b0;
-        ein_signedMagRsData <= 32'b0;
-        ein_signedMagRtData <= 32'b0;
-    end
+            ein_boothOpDiv <= 62'b0;
+            ein_signedMagRsData <= 32'b0;
+            ein_signedMagRtData <= 32'b0;
+        end
 
     ein_rst <= eout_flush_execute | mw_p_exit;
 end
@@ -587,14 +609,12 @@ execute ex (
             .overwritePcEnable(ef_overwritePcEnable),
             .flush_decode(eout_flush_decode),
             .flush_execute(eout_flush_execute),
-            .disableStall(eout_disableStall),
-            .mulDivNumItOut(eout_mulDivNumIt),
-            .mulDivResultOut(eout_mulDivResult),
             .boothOpOut(eout_boothOp),
             .boothNOut(eout_boothN),
             .boothOpDivOut(eout_boothOpDiv),
             .signedMagRsDataOut(eout_signedMagRsData),
             .signedMagRtDataOut(eout_signedMagRtData),
+            .stall(eout_stall),
             .exit(eout_exit));
 
 // ------------------- data memory input --------------------------------
@@ -611,6 +631,7 @@ begin
     em_p_memAddr = 32'b0;
     em_p_accessLength = 2'b0;
     em_p_memAccessUnsigned = 1'b0;
+    em_p_exit = 1'b1;
     min_rst = 1'b1;
 end
 
@@ -665,7 +686,10 @@ begin
     mw_p_executeOutput <= em_p_executeOutput;
     // mw_p_pc_enable <= em_p_pc_enable;
 
-    mw_p_exit <= em_p_exit;
+    if (em_p_exit == 1'b0) // added
+    begin
+        mw_p_exit <= em_p_exit;
+    end
 end
 
 always @(*)
