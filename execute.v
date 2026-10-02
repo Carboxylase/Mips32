@@ -44,13 +44,12 @@ output reg overwritePcEnable,
 output reg flush_decode,
 output reg flush_execute,
 output reg disableStall,
-output reg [31:0] mulDivNumItOut,
-output reg [63:0] mulDivResultOut,
 output reg [64:0] boothOpOut,
 output reg [5:0] boothNOut,
 output reg [61:0] boothOpDivOut,
 output reg [31:0] signedMagRsDataOut,
 output reg [31:0] signedMagRtDataOut,
+output reg stall,
 output reg exit
 /* verilator lint_off UNUSEDSIGNAL */
 );
@@ -75,9 +74,7 @@ output reg exit
 reg signed [31:0] temp32BitVal1; // a temporary value for computations
 reg signed [31:0] temp32BitVal2;
 reg signed [32:0] temp33BitVal;
-reg signed [63:0] mulDivResultTemp;
-reg signed [31:0] mulDivMaxIt;
-reg signed [31:0] mulDivIterator;
+
 reg signed [64:0] boothOpTemp;
 reg [5:0] boothNTemp;
 reg [61:0] boothOpDivTemp;
@@ -96,13 +93,12 @@ begin
     flush_decode = 1'b1;
     flush_execute = 1'b1;
     disableStall = 1'b0;
-    mulDivNumItOut = 32'b0;
-    mulDivResultOut = 64'b0;
     boothOpOut = 65'b0;
     boothNOut = 6'b0;
     boothOpDivOut = 62'b0;
     signedMagRsDataOut = 32'b0;
     signedMagRtDataOut = 32'b0;
+    stall = 1'b0;
     exit = 1'b1;
 
     temp32BitVal1 = 32'b0;
@@ -112,11 +108,6 @@ begin
     boothNTemp = 6'b0;
     boothOpDivTemp = 62'b0;
 
-    mulDivResultTemp = 64'b0;
-    mulDivMaxIt = 32'b0;
-    mulDivIterator = 32'b0;
-    
-    // mulDivNumIt = 32'b0;
 end
 
 always @(*)
@@ -134,13 +125,12 @@ begin
         flush_decode = 1'b1; // reset the rst signal 
         flush_execute = 1'b1; // reset the rst signal 
         disableStall = 1'b0;
-        mulDivNumItOut = 32'b0;
-        mulDivResultOut = 64'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
         boothOpDivOut = 62'b0;
         signedMagRsDataOut = 32'b0;
         signedMagRtDataOut = 32'b0;
+        stall = 1'b0;
         exit = 1'b1;
 
         temp32BitVal1 = 32'b0;
@@ -149,10 +139,6 @@ begin
         boothOpTemp = 65'b0;
         boothNTemp = 6'b0;
         boothOpDivTemp = 62'b0;
-
-        mulDivResultTemp = 64'b0;
-        mulDivMaxIt = 32'b0;
-        mulDivIterator = 32'b0;
         
     end
     else
@@ -162,20 +148,17 @@ begin
         accessLength = 2'b0;
         executeOutput = 32'b0;
         writebackReg = 5'b0;
-        // original reset ---------------------------------
         program_counter_overwrite = 32'b0;
         overwritePcEnable = 1'b0;
         flush_decode = 1'b1; // reset the rst signal
         flush_execute = 1'b1; // reset the rst signal 
-        // ------------------------------------------------
         disableStall = 1'b0;
-        mulDivNumItOut = 32'b0;
-        mulDivResultOut = 64'b0;
         boothOpOut = 65'b0;
         boothNOut = 6'b0;
         boothOpDivOut = 62'b0;
         signedMagRsDataOut = 32'b0;
         signedMagRtDataOut = 32'b0;
+        stall = 1'b0;
         exit = 1'b1;
 
         temp32BitVal1 = 32'b0;
@@ -183,10 +166,6 @@ begin
         temp33BitVal = 33'b0;
         boothOpTemp = 65'b0;
         boothNTemp = 6'b0;
-
-        mulDivResultTemp = 64'b0;
-        mulDivMaxIt = 32'b0;
-        mulDivIterator = 32'b0;
 
         case(opcode)
             6'b000000: 
@@ -302,6 +281,10 @@ begin
                             boothOpDivOut = {31'b0,temp32BitVal1[30:0]};
                             boothNOut = boothNTemp - 1;
 
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                            stall = 1'b1;
+
                             $display("abs sm rs_data: %d", signedMagRsDataOut[30:0]);
                             $display("abs sm rt_data: %d", signedMagRtDataOut[30:0]);
 
@@ -333,6 +316,10 @@ begin
                             boothOpDivOut = boothOpDivTemp;
                             signedMagRtDataOut = signedMagRtDataIn;
                             signedMagRsDataOut = signedMagRsDataIn;
+
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                            stall = 1'b1;
                         end
                         else
                         begin
@@ -347,7 +334,11 @@ begin
                             executeOutput = convert2C({rs_data[31] ^ rt_data[31], boothOpDivTemp[30:0]});
                             writebackReg = rd;
                             boothOpDivOut = 62'b0;
-                            disableStall = 1'b1;
+                            // disableStall = 1'b1;
+
+                            flush_decode = 1'b1;
+                            flush_execute = 1'b1;
+                            stall = 1'b0;
                         end
                     end
                                 
@@ -505,11 +496,19 @@ begin
                             executeOutput = boothOpOut[32:1];
                             writebackReg = rd;
                             boothOpOut = 65'b0;
-                            disableStall = 1'b1;
+                            // disableStall = 1'b1;
+                            flush_decode = 1'b1;
+                            flush_execute = 1'b1;
+                            stall = 1'b0;
                         end
                         else
                         begin
-                            disableStall = 1'b0;
+                            // disableStall = 1'b0;
+                            
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                    
+                            stall = 1'b1;
                         end
 
                         boothNOut = boothNTemp;
@@ -546,11 +545,17 @@ begin
                             executeOutput = boothOpOut[64:33];
                             writebackReg = rd;
                             boothOpOut = 65'b0;
-                            disableStall = 1'b1;
+                            // disableStall = 1'b1;
+                            flush_decode = 1'b1;
+                            flush_execute = 1'b1;
+                            stall = 1'b0;
                         end
                         else
                         begin
-                            disableStall = 1'b0;
+                            // disableStall = 1'b0;
+                            flush_decode = 1'b0;
+                            flush_execute = 1'b0;
+                            stall = 1'b1;
                         end
 
                         boothNOut = boothNTemp;
